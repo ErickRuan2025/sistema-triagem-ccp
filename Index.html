@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      .escondido { display: none; }
+
+      /* Remove as setinhas (spinners) dos campos de número */
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type=number] { 
+        -moz-appearance: textfield; /* Resolve no Firefox */
+      }
+
+      /* Estrutura Principal (Flexbox para Sidebar + Conteúdo) */
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        min-height: 100vh;
+        background-color: #f3f4f6;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      /* === SIDEBAR (Barra Lateral) === */
+      .sidebar {
+        width: 250px;
+        background-color: #212529; /* Fundo escuro */
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        transition: width 0.3s ease;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        overflow: visible; /* AQUI ESTÁ A MÁGICA: Permite que o tooltip flutue para fora */
+      }
+      
+      /* 1. Container do botão Hambúrguer (Topo Direita) */
+      .sidebar-toggle-container {
+        display: flex;
+        justify-content: flex-end; /* Joga o botão para a direita */
+        padding: 15px 15px 5px 15px;
+      }
+      .btn-toggle-sidebar {
+        background: none;
+        border: none;
+        color: #fff; /* Hambúrguer branco */
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .btn-toggle-sidebar:hover { background-color: #343a40; }
+
+      /* 2. Container Centralizado (Relógio, Logo e Título) */
+      .sidebar-brand {
+        text-align: center;
+        padding: 0 15px 15px 15px;
+        border-bottom: 1px solid #343a40;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Alinha tudo milimetricamente ao centro */
+      }
+
+      /* 3. Relógio */
+      .sidebar-clock {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 15px; /* Espaço exato até o brasão */
+      }
+
+      /* 4. Logo */
+      .sidebar-brand img {
+        width: 65px;
+        height: 65px;
+        object-fit: contain;
+        margin-bottom: 15px; /* Espaço exato até o título */
+        display: none;
+      }
+
+      /* 5. Título */
+      .sidebar-brand h6 {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #adb5bd;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* === COMPORTAMENTO QUANDO A BARRA FECHA === */
+      .sidebar.collapsed {
+        width: 70px;
+      }
+      .main-content.expanded {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+      }
+      .sidebar.collapsed .sidebar-toggle-container {
+        justify-content: center; /* Centraliza o hambúrguer */
+        padding: 15px 0 10px 0;
+      }
+      .sidebar.collapsed .sidebar-brand {
+        padding: 0 0 15px 0; /* Ajusta o espaçamento para o brasão caber */
+      }
+      /* Esconde o relógio, título, rodapé e textos. O Brasão fica visível! */
+      .sidebar.collapsed .sidebar-clock,
+      .sidebar.collapsed .sidebar-brand h6,
+      .sidebar.collapsed .sidebar-footer,
+      .sidebar.collapsed .nav-text {
+        display: none; 
+      }
+      /* Centraliza os ícones */
+      .sidebar.collapsed .sidebar-nav a {
+        justify-content: center;
+        padding: 12px 0;
+      }
+      .sidebar.collapsed .sidebar-nav a .material-symbols-outlined {
+        margin-right: 0;
+        font-size: 26px;
+      }
+
+      /* Menu de Navegação na Sidebar */
+      .sidebar-nav {
+        flex-grow: 1; 
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar-nav li { width: 100%; }
+      .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        color: #adb5bd;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+      }
+      .sidebar-nav a:hover, .sidebar-nav a.active {
+        color: #fff;
+        background-color: #343a40;
+        border-left: 4px solid #0d6efd;
+      }
+      .sidebar-nav a .material-symbols-outlined {
+        margin-right: 15px;
+        font-size: 20px;
+      }
+
+      /* Rodapé da Sidebar */
+      .sidebar-footer {
+        padding: 15px;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #6c757d;
+        border-top: 1px solid #343a40;
+      }
+
+      /* === ÁREA PRINCIPAL DE CONTEÚDO === */
+      .main-content {
+        flex-grow: 1;
+        margin-left: 250px;
+        transition: margin-left 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        width: calc(100% - 250px);
+      }
+      
+      .main-content.expanded {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+      }
+
+      /* Topbar */
+      .topbar {
+        background-color: #fff;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+      }
+      .btn-toggle-sidebar {
+        background: none;
+        border: none;
+        color: #fff; /* Hambúrguer Branco para aparecer no fundo escuro */
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+      }
+      .btn-toggle-sidebar:hover {
+        background-color: #343a40; /* Fundo levemente mais claro ao passar o mouse */
+      }
+      .topbar-title {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #212529;
+      }
+
+      /* Container do Formulário */
+      .form-container {
+        padding: 0 20px 20px 20px;
+        flex-grow: 1;
+      }
+
+      /* Barra de pesquisa superior padronizada */
+      .top-search-bar {
+        display: flex;
+        gap: 10px;
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        align-items: center;
+      }
+      .top-search-bar input {
+        flex-grow: 1;
+        max-width: 350px; 
+        padding: 10px 15px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background-color: #f9fafb;
+        font-size: 14px;
+        outline: none;
+      }
+      .top-search-bar input:focus {
+        border-color: #004ba0;
+        background-color: #fff;
+      }
+      .top-search-bar button {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background-color 0.2s ease;
+      }
+
+      /* Botões Padronizados do seu Sistema */
+      .btn-search { background-color: #004ba0; color: white; }
+      .btn-search:hover { background-color: #003377; }
+
+      .btn-nav-primary, .btn-nav-secondary {
+        border-radius: 6px; 
+        padding: 10px 22px; 
+        font-weight: bold; 
+        font-size: 14px; 
+        border: none; 
+        cursor: pointer; 
+        transition: background-color 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-nav-primary { background-color: #004ba0; color: white; }
+      .btn-nav-primary:hover { background-color: #003377; }
+      .btn-nav-secondary { background-color: #6b7280; color: white; }
+      .btn-nav-secondary:hover { background-color: #4b5563; }
+
+      /* === BOTÃO DE SALVAR "INTELIGENTE" === */
+      .btn-salvar-smart {
+        background-color: #3b82f6;
+        color: white;
+        border-radius: 6px;
+        padding: 10px 22px;
+        font-weight: bold;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-salvar-smart:hover:not(:disabled) { background-color: #10b981; }
+      .btn-salvar-smart:hover:not(:disabled) span.texto-normal,
+      .btn-salvar-smart:hover:not(:disabled) .material-symbols-outlined { display: none; }
+      .btn-salvar-smart:hover:not(:disabled)::after { content: "Confirmar!"; font-size: 16px; }
+      .btn-salvar-smart:disabled { background-color: #d1d5db; color: #6b7280; cursor: not-allowed; }
+      
+      /* Botão Gerar Lote */
+      .btn-lote {
+        background-color: #dc2626;
+        color: white;
+        border-radius: 6px;
+        padding: 14px 40px;
+        font-weight: bold;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-lote:hover { background-color: #b91c1c; }
+
+      /* === CAIXA DE DELITOS/SAÚDE COM SCROLL E PESQUISA === */
+      .caixa-delitos-scroll {
+        max-height: 260px;
+        overflow-y: auto;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 15px;
+        background-color: #f9fafb;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+      }
+      .caixa-delitos-scroll::-webkit-scrollbar { width: 8px; }
+      .caixa-delitos-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+      .titulo-categoria-delito {
+        font-size: 11px;
+        font-weight: 800;
+        color: #004ba0;
+        text-transform: uppercase;
+        margin-top: 15px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 4px;
+      }
+      .titulo-categoria-delito:first-child { margin-top: 0; }
+      .delito-item label, .saude-item label { font-size: 13px; }
+
+      /* === EFEITO TOOLTIP (QUANDO O MENU ESTÁ FECHADO) === */
+      
+      /* 1. Prepara o link para ancorar a caixa flutuante */
+      .sidebar.collapsed .sidebar-nav a {
+        position: relative; 
+        overflow: visible; 
+      }
+      
+      /* 2. Transforma o texto escondido num Tooltip Flutuante ao passar o rato */
+      .sidebar.collapsed .sidebar-nav a:hover .nav-text {
+        display: block; /* Volta a mostrar o texto, mas agora flutuando */
+        position: absolute;
+        left: 75px; /* Empurra para fora da barra lateral (que tem 70px) */
+        top: 50%;
+        transform: translateY(-50%); /* Centraliza verticalmente com o ícone */
+        background-color: #212529; /* Cor escura igual à da barra */
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap; /* Impede que o texto quebre de linha */
+        z-index: 1050;
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+      }
+
+      /* 3. Desenha aquele pequeno triângulo (setinha) a apontar para o ícone */
+      .sidebar.collapsed .sidebar-nav a:hover .nav-text::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: -5px; /* Puxa o triângulo para fora da caixa à esquerda */
+        transform: translateY(-50%);
+        border-width: 5px 5px 5px 0;
+        border-style: solid;
+        border-color: transparent #212529 transparent transparent;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <!-- === SIDEBAR FIXA === -->
+    <nav class="sidebar" id="sidebarMenu">
+      
+      <!-- 1. Botão Hambúrguer isolado no topo à direita -->
+      <div class="sidebar-toggle-container">
+        <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+          <span class="material-symbols-outlined" style="font-size: 28px;">menu</span>
+        </button>
+      </div>
+      
+      <!-- 2. Bloco Centralizado: Relógio -> Brasão -> Título -->
+      <div class="sidebar-brand">
+        <div id="topo-relogio" class="sidebar-clock">00:00:00</div>
+        <img src="" id="profile-logo" alt="Brasão da Polícia Penal">
+        <h6>Sistema de Triagem</h6>
+      </div>
+
+      <!-- Links de Navegação -->
+      <ul class="sidebar-nav">
+        <li>
+          <a href="#" class="active" onclick="event.preventDefault(); alternarTelas('telaAssinatura', this)">
+            <span class="material-symbols-outlined">print</span>
+            <span class="nav-text">Doc. para Assinar</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" onclick="event.preventDefault(); alternarTelas('telaTriagem', this)">
+            <span class="material-symbols-outlined">assignment</span>
+            <span class="nav-text">Nova Triagem</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Rodapé da Sidebar -->
+      <div class="sidebar-footer">
+        Versão 1.0.0<br>
+        Desenvolvido por Erick Ruan
+      </div>
+    </nav>
+
+    <!-- === ÁREA PRINCIPAL (Conteúdo e Topbar) === -->
+    <main class="main-content" id="mainContent">
+      
+      <!-- Topbar -->
+      <header class="topbar">
+        <h1 class="topbar-title">Casa de Custódia de Piraquara - CCP</h1>
+      </header>
+
+      <!-- === TELA 1: DOC PARA ASSINAR (Abre por padrão) === -->
+      <div id="telaAssinatura" class="form-container">
+        <div class="card shadow-sm mb-4 border-primary">
+          <div class="card-header bg-primary text-white"><h5 class="mb-0">Gerar Documentos para Assinatura</h5></div>
+          <div class="card-body p-4">
+            
+            <div class="row g-4">
+              <!-- Bloco 1: Lote Inteiro (Esquerda) -->
+              <div class="col-md-7 border-end">
+                <h6 class="fw-bold text-primary mb-3">
+                  <span class="material-symbols-outlined align-middle fs-5 me-1">layers</span> Gerar em Lote (Vários PPLs)
+                </h6>
+                <label class="form-label text-muted small">Cole os prontuários abaixo (um por linha):</label>
+                <textarea id="campoLoteProntuarios" class="form-control mb-3" rows="6" placeholder="Ex:
+                  12345
+                  67890
+                  11121"></textarea>
+                <div class="d-flex justify-content-end">
+                  <button id="btnGerarLote" class="btn-nav-primary shadow-sm" onclick="acionarGeracao('campoLoteProntuarios', 'btnGerarLote')">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">settings_b_roll</span> Gerar Lote de Assinaturas
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bloco 2: Individual (Direita) -->
+              <div class="col-md-5">
+                <h6 class="fw-bold text-primary mb-3">
+                  <span class="material-symbols-outlined align-middle fs-5 me-1">person_search</span> Gerar Individual (Refazer)
+                </h6>
+                <label class="form-label text-muted small">Digite apenas o prontuário para correção:</label>
+                <div class="d-flex gap-2">
+                  
+                  <!-- Nova barra de pesquisa com ícone flutuante interno -->
+                  <div class="position-relative flex-grow-1">
+                    <span class="material-symbols-outlined position-absolute" style="color: #004ba0; font-size: 20px; top: 50%; transform: translateY(-50%); left: 12px; pointer-events: none;">search</span>
+                    <input type="text" id="campoUnicoProntuario" class="form-control" placeholder="Número do prontuário..." style="padding-left: 40px;">
+                  </div>
+
+                  <button id="btnGerarUnico" class="btn-nav-primary shadow-sm m-0" style="white-space: nowrap;" onclick="acionarGeracao('campoUnicoProntuario', 'btnGerarUnico')">
+                    Gerar Único
+                  </button>
+                  
+                </div>
+              </div>
+            </div>
+
+            <!-- INÍCIO: SESSÃO PLANTÃO / FICHAS AVULSAS -->
+            <div id="sessaoFichasAvulsas" class="mt-5 border-top pt-4 escondido">
+              <h5 class="text-dark fw-bold mb-3">
+                <span class="material-symbols-outlined align-middle">person_add</span> 
+                Fichas Avulsas / Esporádico
+              </h5>
+              <!-- NOVO: Caixa de lembrete dos faltantes -->
+              <div id="lembreteFaltantes" class="alert alert-danger escondido py-2 px-3 mb-3">
+                <span class="fw-bold">Prontuários faltantes do lote anterior:</span> 
+                <span id="textoLembreteFaltantes"></span>
+              </div>
+              <p class="text-muted small">Adicione abaixo os prontuários que não foram encontrados na base para gerar as fichas com o nome impresso corretamente.</p>
+              
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <input type="number" id="inputProntAvulso" class="form-control" placeholder="Prontuário">
+                </div>
+                <div class="col-md-7">
+                  <!-- O 'oninput' garante as maiúsculas automáticas -->
+                  <input type="text" id="inputNomeAvulso" class="form-control" placeholder="Nome completo do PPL" oninput="this.value = this.value.toUpperCase()">
+                </div>
+                <div class="col-md-2">
+                  <button class="btn btn-outline-primary w-100" type="button" onclick="adicionarFichaAvulsa()">
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Onde a lista vai aparecer -->
+              <ul id="listaFichasAvulsas" class="list-group mt-3 mb-3"></ul>
+              
+              <!-- Botão que envia os avulsos -->
+              <button id="btnGerarAvulso" class="btn-nav-primary float-end escondido" type="button" onclick="acionarGeracaoAvulsa()">
+                <span class="material-symbols-outlined align-middle">print</span> Gerar Lote Avulso
+              </button>
+            </div>
+            <!-- FIM: SESSÃO PLANTÃO -->
+
+          </div>
+        </div>
+      </div>
+
+      <!-- === TELA 2: NOVA TRIAGEM (Oculta por padrão) === -->
+      <div id="telaTriagem" class="form-container escondido">
+        
+        <div class="card shadow-sm mb-4 border-primary">
+          <div class="card-header bg-primary text-white"><h5 class="mb-0">Busca e Dados Pessoais</h5></div>
+          <div class="card-body">
+            <div class="row align-items-center mb-3">
+              <!-- BARRA DE PESQUISA -->
+              <div class="col-md-8">
+                <div class="top-search-bar" style="margin-bottom: 0; padding: 10px;">
+                  <span class="material-symbols-outlined" style="color: #004ba0; font-size: 24px;">search</span>
+                  <input type="text" id="inputProntuario" placeholder="Pesquisar por Prontuário" autofocus>
+                  <button type="button" class="btn-search" onclick="pesquisar()">Pesquisar</button>
+                </div>
+              </div>
+
+              <!-- DATA DA TRIAGEM -->
+              <div class="col-md-3 ms-auto">
+                <label class="form-label fw-bold text-primary small mb-1">Data da Triagem</label>
+                <input type="date" id="campoDataTriagem" class="form-control border-primary">
+              </div>
+            </div>
+            <hr>
+            <div class="row g-2">
+              <div class="col-md-6"><label class="form-label small">Nome do PPL</label><input type="text" id="campoPPL" class="form-control bg-light" readonly></div>
+              <div class="col-md-2"><label class="form-label small">Nascimento</label><input type="text" id="campoNasc" class="form-control bg-light" readonly></div>
+              <div class="col-md-4"><label class="form-label small">Nome da Mãe</label><input type="text" id="campoMae" class="form-control bg-light" readonly></div>
+              <div class="col-md-4"><label class="form-label small">Naturalidade</label><input type="text" id="campoNaturalidade" class="form-control bg-light" readonly></div>
+              <div class="col-md-2"><label class="form-label small">UF</label><input type="text" id="campoUF" class="form-control bg-light" readonly></div>
+            </div>
+          </div>
+        </div>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+          <li class="nav-item"><button class="nav-link active fw-bold" id="dioq-tab" data-bs-toggle="tab" data-bs-target="#dioq" type="button">Triagem DIOQ</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold" id="pedagogia-tab" data-bs-toggle="tab" data-bs-target="#pedagogia" type="button">Triagem PEDAGOGIA</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold" id="social-tab" data-bs-toggle="tab" data-bs-target="#social" type="button">Triagem SOCIAL</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold text-success" id="fotos-tab" data-bs-toggle="tab" data-bs-target="#fotos" type="button"><span class="material-symbols-outlined align-middlefs-6">photo_camera</span> Fotos</button></li>
+        </ul>
+
+        <div class="tab-content bg-white p-4 border border-top-0 shadow-sm" id="myTabContent">
+          
+          <!-- ABA DIOQ -->
+          <div class="tab-pane fade show active" id="dioq" role="tabpanel">
+            <h5 class="text-dark fw-bold border-bottom pb-2">Histórico Laboral</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6"><label class="form-label">Profissão / Atividade principal:</label><input type="text" id="dioqProfissao" class="form-control"></div>
+              <div class="col-md-3"><label class="form-label">Possui vínculo empregatício?</label><select id="dioqVinculo" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-md-3"><label class="form-label">Tempo de experiência:</label><input type="text" id="dioqTempoExp" class="form-control"></div>
+              <div class="col-md-5"><label class="form-label">Trabalhava no momento da prisão?</label><select id="dioqTrabPrisao" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-md-7"><label class="form-label">Atividade exercida na ocasião:</label><input type="text" id="dioqAtivOcasiao" class="form-control"></div>
+              <div class="col-md-6"><label class="form-label">Empresas anteriores:</label><input type="text" id="dioqEmpAnt" class="form-control"></div>
+              <div class="col-md-6"><label class="form-label">Outras habilidades/atividades laborterápicas:</label><input type="text" id="dioqOutrasHab" class="form-control"></div>
+            </div>
+
+            <h5 class="text-dark fw-bold border-bottom pb-2">Convívio Carcerário e Social</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label">Possui convívio com pop. carcerária?</label>
+                <select id="dioqConv" class="form-select" onchange="verificarConvivio()">
+                  <option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option>
+                </select>
+              </div>
+              <div class="col-md-8 escondido" id="divMotivoConv">
+                <label class="form-label text-danger">Motivo (se não possuir convívio):</label>
+                <input type="text" id="dioqMotivoConv" class="form-control border-danger">
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label">É integrante de facção criminosa?</label>
+                <select id="dioqFaccao" class="form-select" onchange="verificarFaccao()">
+                  <option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option>
+                </select>
+              </div>
+              <div class="col-md-4 escondido" id="divQualFaccao">
+                <label class="form-label">Qual Facção?</label>
+                <input type="text" id="dioqQualFaccao" class="form-control" placeholder="Digite aqui...">
+              </div>
+              
+              <div class="col-12 mt-3">
+                <label class="form-label fw-bold">Histórico em outras unidades prisionais:</label>
+                <div class="d-flex flex-wrap gap-4 p-3 bg-light rounded border">
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="CCSJP" id="chk1"><label class="form-check-label" for="chk1">CCSJP</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="CPAI" id="chk2"><label class="form-check-label" for="chk2">CPAI</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="CPAI-UP" id="chk3"><label class="form-check-label" for="chk3">CPAI-UP</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="PCE-UP" id="chk4"><label class="form-check-label" for="chk4">PCE-UP</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="PCEII-US" id="chk5"><label class="form-check-label" for="chk5">PCEII-US</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="PEPI" id="chk6"><label class="form-check-label" for="chk6">PEPI</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="PEPII" id="chk7"><label class="form-check-label" for="chk7">PEPII</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="histPris" value="CPC/PISP" id="chk8"><label class="form-check-label" for="chk8">CPC/PISP</label></div>
+                </div>
+              </div>
+            </div>
+
+            <h5 class="text-dark fw-bold border-bottom pb-2">Histórico Processual</h5>
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label">Participou de audiência de custódia?</label><select id="dioqAud" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-md-4"><label class="form-label">Foi vítima de agressão física?</label><select id="dioqAgres" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-12"><label class="form-label">Observações / Detalhes:</label><textarea id="dioqObs" class="form-control" rows="2"></textarea></div>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-4">
+              <button type="button" class="btn-nav-primary" onclick="event.preventDefault(); mudarAba('pedagogia-tab')">
+                Próximo: Pedagogia <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ABA PEDAGOGIA -->
+          <div class="tab-pane fade" id="pedagogia" role="tabpanel">
+            <h5 class="text-dark fw-bold border-bottom pb-2">Escolaridade</h5>
+            <div class="row g-3">
+              <div class="col-md-12"><label class="form-label fw-bold">Ensino Fundamental:</label><div><input type="radio" name="ensinoF" value="Completo" onchange="verificarEscolaridade()"> Completo <input type="radio" name="ensinoF" value="Incompleto" onchange="verificarEscolaridade()" class="ms-3"> Incompleto</div></div>
+              <div class="col-md-12 escondido" id="divEnsinoMedio"><label class="form-label fw-bold">Ensino Médio:</label><div><input type="radio" name="ensinoM" value="Completo" onchange="verificarEscolaridade()"> Completo <input type="radio" name="ensinoM" value="Incompleto" onchange="verificarEscolaridade()" class="ms-3"> Incompleto</div></div>
+              <div class="col-md-12 escondido" id="divEnsinoSuperior"><label class="form-label fw-bold">Ensino Superior:</label><div><input type="radio" name="ensinoS" value="Completo" onchange="verificarEscolaridade()"> Completo <input type="radio" name="ensinoS" value="Incompleto" onchange="verificarEscolaridade()" class="ms-3"> Incompleto</div><div class="mt-2 escondido" id="divQualCurso"><input type="text" id="pedQualCurso" class="form-control" placeholder="Qual curso?"></div></div>
+              <hr>
+              <div class="col-md-6"><label class="form-label">Veio de outra Instituição Prisional?</label><select id="pedOutraInst" class="form-select" onchange="verificarInstituicao()"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-12 mt-3 escondido" id="divQualInst">
+                <label class="form-label fw-bold">Quais Unidades?</label>
+                <div class="d-flex flex-wrap gap-4 p-3 bg-light rounded border">
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="CCSJP" id="pedChk1"><label class="form-check-label" for="pedChk1">CCSJP</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="CPAI" id="pedChk2"><label class="form-check-label" for="pedChk2">CPAI</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="CPAI-UP" id="pedChk3"><label class="form-check-label" for="pedChk3">CPAI-UP</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="PCE-UP" id="pedChk4"><label class="form-check-label" for="pedChk4">PCE-UP</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="PCEII-US" id="pedChk5"><label class="form-check-label" for="pedChk5">PCEII-US</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="PEPI" id="pedChk6"><label class="form-check-label" for="pedChk6">PEPI</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="PEPII" id="pedChk7"><label class="form-check-label" for="pedChk7">PEPII</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="pedInstPris" value="CPC/PISP" id="pedChk8"><label class="form-check-label" for="pedChk8">CPC/PISP</label></div>
+                </div>
+              </div>
+              <div class="col-md-12 mb-3">
+                <label class="form-label fw-bold">Estudava na Unidade Prisional de origem?</label><br>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="pedEstudavaOrigem" id="estudavaSim" value="Sim" onclick="toggleUnidadesEstudo(true)">
+                  <label class="form-check-label" for="estudavaSim">Sim</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="pedEstudavaOrigem" id="estudavaNao" value="Não" onclick="toggleUnidadesEstudo(false)">
+                  <label class="form-check-label" for="estudavaNao">Não</label>
+                </div>
+
+                <!-- Bloco das unidades (Oculto por padrão) -->
+                <div id="divUnidadesEstudo" class="escondido mt-2 p-3 bg-light border rounded">
+                  <label class="form-label small text-muted">Selecione as unidades:</label><br>
+                  <div class="d-flex flex-wrap gap-3">
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="CCSJP"> <label class="form-check-label">CCSJP</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="CPAI"> <label class="form-check-label">CPAI</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="CPAI-UP"> <label class="form-check-label">CPAI-UP</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="PCE-UP"> <label class="form-check-label">PCE-UP</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="PCEII-US"> <label class="form-check-label">PCEII-US</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="PEPI"> <label class="form-check-label">PEPI</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="PEPII"> <label class="form-check-label">PEPII</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="CPC/PISP"> <label class="form-check-label">CPC/PISP</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" name="unidadeEstudo" value="Mario Faraco"> <label class="form-check-label fw-bold text-primary">Mario Faraco</label></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h5 class="text-dark fw-bold border-bottom pb-2 mt-4">Interesses</h5>
+            <label class="form-label mb-3">Possui interesse em estudar e/ou participar de projetos educacionais oferecidos por esta unidade?</label>
+            <div class="d-flex flex-column gap-2 p-3 bg-light rounded border">
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="intNao" value="Sim"><label class="form-check-label" for="intNao">Não possuo interesse</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="intEja" value="Sim"><label class="form-check-label" for="intEja">EJA - Educação de Jovens e Adultos</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="intCursos" value="Sim"><label class="form-check-label" for="intCursos">Cursos Profissionalizantes</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="intLeitura" value="Sim"><label class="form-check-label" for="intLeitura">Projeto Remição pela Leitura</label></div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="intCert" value="Sim" onchange="verificarCertificacao()">
+                <label class="form-check-label" for="intCert">Participar de provas de certificação avaliativas:</label>
+                <div class="ms-4 mt-2 escondido" id="divCert">
+                  <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="certEnem" value="Sim"><label class="form-check-label" for="certEnem">ENEM</label></div>
+                  <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="certEnceja" value="Sim"><label class="form-check-label" for="certEnceja">ENCEJA</label></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn-nav-secondary" onclick="event.preventDefault(); mudarAba('dioq-tab')">
+                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span> Voltar para DIOQ
+              </button>
+              <button type="button" class="btn-nav-primary" onclick="event.preventDefault(); mudarAba('social-tab')">
+                Próximo: Social <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ABA SOCIAL -->
+          <div class="tab-pane fade" id="social" role="tabpanel">
+            <h5 class="text-dark fw-bold border-bottom pb-2">Saúde e Histórico Pessoal</h5>
+            <div class="row g-3 mb-4">
+              
+              <!-- SAÚDE -->
+              <div class="col-md-4"><label class="form-label">Possui problema de saúde?</label><select id="socSaude" class="form-select" onchange="verificarCheckbox('socSaude', 'divSaude', 'chkSaude')"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              
+              <!-- CAIXA DE PROBLEMAS DE SAÚDE -->
+              <div class="col-md-12 escondido mt-2" id="divSaude">
+                <label class="form-label fw-bold">Selecione os Problemas de Saúde:</label>
+                
+                <!-- BARRA DE PESQUISA (FILTRO) -->
+                <div class="input-group mb-2">
+                  <span class="input-group-text bg-white"><span class="material-symbols-outlined" style="font-size: 18px; color: #6b7280;">search</span></span>
+                  <input type="text" id="filtroSaude" class="form-control" placeholder="Pesquisar problema de saúde (ex: Asma, Diabetes...)" onkeyup="filtrarListaSaude()">
+                </div>
+
+                <div class="caixa-delitos-scroll" id="listaSaudeContainer">
+                  <div class="row g-2 mb-2">
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Asma"><label class="form-check-label">Asma</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Bronquite / DPOC"><label class="form-check-label">Bronquite / DPOC</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Convulsão"><label class="form-check-label">Convulsão</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Diabético Tipo 1"><label class="form-check-label">Diabético Tipo 1</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Diabético Tipo 2"><label class="form-check-label">Diabético Tipo 2</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Faz Hemodiálise"><label class="form-check-label">Faz Hemodiálise</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Hanseníase"><label class="form-check-label">Hanseníase</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Hipertensão"><label class="form-check-label">Hipertensão</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="HIV/Aids"><label class="form-check-label">HIV/Aids</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Problema Renal"><label class="form-check-label">Problema Renal</label></div></div>
+                    <div class="col-sm-6 col-lg-4 saude-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkSaude" value="Tuberculose"><label class="form-check-label">Tuberculose</label></div></div>
+                    
+                    <!-- OPÇÃO OUTROS (Saúde) -->
+                    <div class="col-sm-6 col-lg-4 saude-item">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chkSaudeOutros" name="chkSaude" value="Outros" onchange="verificarOutraSaude()">
+                        <label class="form-check-label" for="chkSaudeOutros">Outros...</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- CAIXA DE TEXTO (Saúde Outros) -->
+                <div class="mt-2 escondido" id="divQualSaude">
+                  <input type="text" id="qualSaudeOutros" class="form-control" placeholder="Especifique qual é o problema de saúde...">
+                </div>
+              </div>
+
+              <!-- DELITOS -->
+              <div class="col-md-4 mt-3"><label class="form-label">Delito na menoridade?</label><select id="socDelito" class="form-select" onchange="verificarCheckbox('socDelito', 'divDelito', 'chkDelito')"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-md-12 escondido" id="divDelito">
+                <label class="form-label fw-bold">Selecione os Delitos:</label>
+                
+                <!-- BARRA DE PESQUISA (FILTRO) -->
+                <div class="input-group mb-2">
+                  <span class="input-group-text bg-white"><span class="material-symbols-outlined" style="font-size: 18px; color: #6b7280;">search</span></span>
+                  <input type="text" id="filtroDelitos" class="form-control" placeholder="Pesquisar artigo ou crime (ex: 157, Tráfico, Maria da Penha...)" onkeyup="filtrarListaDelitos()">
+                </div>
+
+                <!-- CAIXA DE DELITOS (Com Feminicídio) -->
+                <div class="caixa-delitos-scroll" id="listaDelitosContainer">
+                  <div class="titulo-categoria-delito">Crimes contra a Vida e a Pessoa</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 121: Homicídio"><label class="form-check-label">Art. 121 (Homicídio)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 121, § 2º, VI (Feminicídio)"><label class="form-check-label">Feminicídio</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 129: Lesão corporal"><label class="form-check-label">Art. 129 (Lesão corporal)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 140: Injúria"><label class="form-check-label">Art. 140 (Injúria)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 147: Ameaça"><label class="form-check-label">Art. 147 (Ameaça)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 147-A: Perseguição (Stalking)"><label class="form-check-label">Art. 147-A (Stalking)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 148: Sequestro e cárcere"><label class="form-check-label">Art. 148 (Sequestro/Cárcere)</label></div></div>
+                  </div>
+
+                  <div class="titulo-categoria-delito">Crimes contra o Patrimônio</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 150: Violação de domicílio"><label class="form-check-label">Art. 150 (Violação domicílio)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 155: Furto"><label class="form-check-label">Art. 155 (Furto)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 157: Roubo"><label class="form-check-label">Art. 157 (Roubo)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 158: Extorsão"><label class="form-check-label">Art. 158 (Extorsão)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 163: Dano"><label class="form-check-label">Art. 163 (Dano)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 168: Apropriação indébita"><label class="form-check-label">Art. 168 (Apropriação)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 171: Estelionato"><label class="form-check-label">Art. 171 (Estelionato)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 180: Receptação"><label class="form-check-label">Art. 180 (Receptação)</label></div></div>
+                  </div>
+
+                  <div class="titulo-categoria-delito">Drogas e Armas</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 28: Posse p/ consumo"><label class="form-check-label">Art. 28 (Drogas - Consumo)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 33: Tráfico de drogas"><label class="form-check-label">Art. 33 (Tráfico)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 35: Associação ao tráfico"><label class="form-check-label">Art. 35 (Assoc. Tráfico)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 37: Informante (Fogueteiro)"><label class="form-check-label">Art. 37 (Informante)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 12: Posse arma (permitida)"><label class="form-check-label">Art. 12 (Posse de Arma)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 14: Porte arma (permitida)"><label class="form-check-label">Art. 14 (Porte de Arma)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 16: Arma uso restrito/proibido"><label class="form-check-label">Art. 16 (Arma Restrita)</label></div></div>
+                  </div>
+
+                  <div class="titulo-categoria-delito">Dignidade Sexual e Violência Doméstica</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 217-A: Estupro de vulnerável"><label class="form-check-label">Art. 217-A (Estupro vuln.)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 218: Corrupção de menores"><label class="form-check-label">Art. 218 (Corrupção menores)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 147-B: Violência psicológica (Mulher)"><label class="form-check-label">Art. 147-B (Viol. Psicológica)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 24-A: Descumprimento Medida Protetiva"><label class="form-check-label">Art. 24-A (Medida Protetiva)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Lei 11.340/06: Violência doméstica"><label class="form-check-label">Lei 11.340 (Maria da Penha)</label></div></div>
+                  </div>
+
+                  <div class="titulo-categoria-delito">Crimes de Trânsito e Outros</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 306: Embriaguez ao volante"><label class="form-check-label">Art. 306 (Embriaguez volante)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 309: Dirigir sem CNH"><label class="form-check-label">Art. 309 (Sem CNH)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 288: Associação criminosa"><label class="form-check-label">Art. 288 (Assoc. Criminosa)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Lei 12.850/13: Organização criminosa"><label class="form-check-label">Lei 12.850 (Org. Criminosa)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 331: Desacato"><label class="form-check-label">Art. 331 (Desacato)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 334-A: Contrabando"><label class="form-check-label">Art. 334-A (Contrabando)</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Art. 733: Pensão Alimentícia"><label class="form-check-label">Pensão Alimentícia</label></div></div>
+                    <div class="col-sm-6 col-lg-4 delito-item"><div class="form-check"><input class="form-check-input" type="checkbox" name="chkDelito" value="Outros"><label class="form-check-label">Outros...</label></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- USO DE DROGAS -->
+              <div class="row mb-3 mt-3">
+                <!-- Coluna Esquerda: Perguntas -->
+                <div class="col-md-6">
+                  <label class="form-label">Uso de drogas na menoridade?</label>
+                  <select id="socDrogas" class="form-select mb-2" onchange="verificarCheckbox('socDrogas', 'divDrogasLista', 'chkDrogas'); verificarDetalhesDrogas();">
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                  </select>
+
+                  <div id="divDrogasDetalhes" class="escondido">
+                    <input type="number" id="idadeDrogas" class="form-control mb-2" placeholder="Iniciou com qual idade?">
+                    <select id="aindaUsuario" class="form-select border-danger">
+                      <option value="">Ainda é usuário? (Obrigatório)</option>
+                      <option value="Sim">Sim</option>
+                      <option value="Não">Não</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Coluna Direita: Lista de Drogas -->
+                <div class="col-md-6 escondido" id="divDrogasLista">
+                  <label class="form-label fw-bold">Quais?</label>
+                  <div class="row g-2">
+                    <div class="col-sm-6 col-lg-4">
+                      <div class="form-check"><input class="form-check-input" type="checkbox" name="chkDrogas" value="Maconha"><label class="form-check-label">Maconha</label></div>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                      <div class="form-check"><input class="form-check-input" type="checkbox" name="chkDrogas" value="Cocaína"><label class="form-check-label">Cocaína</label></div>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                      <div class="form-check"><input class="form-check-input" type="checkbox" name="chkDrogas" value="Crack"><label class="form-check-label">Crack</label></div>
+                    </div>
+                    
+                    <!-- Opção Outros -->
+                    <div class="col-sm-6 col-lg-4">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chkDrogasOutros" name="chkDrogas" value="Outros" onchange="verificarOutraDroga()">
+                        <label class="form-check-label" for="chkDrogasOutros">Outros...</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Campo de texto para "Outros" -->
+                  <div class="mt-2 escondido" id="divQualDroga">
+                    <input type="text" id="qualDrogaOutros" class="form-control" placeholder="Especifique qual droga...">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h5 class="text-dark fw-bold border-bottom pb-2">Informações Familiares</h5>
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label">Estado Civil:</label>
+                <select id="socEstadoCivil" class="form-select" onchange="verificarEstadoCivil()">
+                  <option value="">Selecione...</option>
+                  <option value="Solteiro">Solteiro</option>
+                  <option value="Casado">Casado</option>
+                  <option value="União Estável">União Estável</option>
+                  <option value="Amasiado">Amasiado</option>
+                  <option value="Divorciado">Divorciado</option>
+                </select>
+              </div>
+              <div class="col-md-5 escondido" id="divConjuge"><label class="form-label text-primary">Nome da Cônjuge/Companheira:</label><input type="text" id="socNomeConjuge" class="form-control border-primary"></div>
+              <div class="col-md-3 escondido" id="divTempoUniao"><label class="form-label text-primary">Tempo de União:</label><input type="text" id="socTempoUniao" class="form-control border-primary" placeholder="Ex: 5 anos"></div>
+
+              <div class="col-md-3"><label class="form-label">Possuem filhos?</label><select id="socFilhos" class="form-select" onchange="verificarFilhos()"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-md-3 escondido" id="divQtdFilhos"><label class="form-label">Quantos?</label><input type="number" id="socQtdFilhos" class="form-control" min="0" oninput="this.value = Math.abs(this.value)"></div>            
+              
+              <div class="col-md-12 mt-3"><label class="form-label">Residia com:</label><input type="text" id="socResidiaCom" class="form-control"></div>
+              <div class="col-md-12">
+                <label class="form-label mb-1">Endereço de domicílio:</label>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <input type="text" id="socEndRua" class="form-control" placeholder="Rua / Avenida">
+                  </div>
+                  <div class="col-md-2">
+                    <input type="text" id="socEndNum" class="form-control" placeholder="Nº">
+                  </div>
+                  <div class="col-md-4">
+                    <input type="text" id="socEndBairro" class="form-control" placeholder="Bairro / Cidade">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h5 class="text-dark fw-bold border-bottom pb-2">Contato e Outros</h5>
+            <div class="row g-3">
+              <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="chkNaoLembraTel" onchange="verificarNaoLembra()"><label class="form-check-label fw-bold text-danger">PPL NÃO LEMBRA OS TELEFONES</label></div></div>
+              <div class="col-md-6" id="divTel1"><input type="text" id="socTel1" class="form-control mb-1" placeholder="(XX) 9XXXX-XXXX"><div class="input-group"><span class="input-group-text">Falar com:</span><input type="text" id="socFalar1" class="form-control" placeholder="Nome do contato"></div></div>
+              <div class="col-md-6" id="divTel2"><input type="text" id="socTel2" class="form-control mb-1" placeholder="(XX) 9XXXX-XXXX"><div class="input-group"><span class="input-group-text">Falar com:</span><input type="text" id="socFalar2" class="form-control" placeholder="Nome do contato"></div></div>
+              
+              <div class="col-md-4"><label class="form-label">Apoio dos familiares?</label><select id="socApoio" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              
+              <div class="col-md-8"><label class="form-label">Orientação sexual:</label>
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                  <input type="radio" name="radOS" value="Heterossexual" onchange="verificarOS()"> Heterossexual
+                  <input type="radio" name="radOS" value="Bissexual" onchange="verificarOS()"> Bissexual
+                  <input type="radio" name="radOS" value="Homem Cis Gay" onchange="verificarOS()"> Homem Cis
+                  <input type="radio" name="radOS" value="Outros" onchange="verificarOS()"> Outros
+                  <input type="text" id="socQualOS" class="form-control form-control-sm w-auto escondido" placeholder="Especifique">
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4 border-top pt-4">
+              <button type="button" class="btn-nav-secondary" onclick="event.preventDefault(); mudarAba('pedagogia-tab')">
+                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span> Voltar para Pedagogia
+              </button>
+
+              <button type="button" class="btn-salvar-smart shadow-sm" id="btnSalvarFinal" onclick="salvarEGerarPDF()">
+                <span class="material-symbols-outlined" id="iconeSalvar" style="font-size: 18px;">save</span>
+                <span class="texto-normal" id="textoSalvar">Salvar Triagem</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ABA REGISTRO FOTOGRÁFICO -->
+          <div class="tab-pane fade" id="fotos" role="tabpanel">
+            <h5 class="text-dark fw-bold border-bottom pb-2">Registro Principal (Rosto)</h5>
+            <p class="text-muted small">Certifique-se de que o rosto do PPL está bem iluminado e enquadrado.</p>
+            
+            <div class="row g-3 mb-4">
+              <!-- Frente -->
+              <div class="col-md-4 text-center">
+                <label class="form-label fw-bold">Rosto Frente</label>
+                <div class="border rounded bg-light d-flex align-items-center justify-content-center mx-auto" style="height: 220px; width: 165px; overflow: hidden;" id="boxFoto_Frente">
+                  <span class="material-symbols-outlined text-muted" style="font-size: 48px;">person</span>
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-2 w-75" type="button" onclick="abrirCamera('Rosto_Frente', 'boxFoto_Frente')">Capturar Frente</button>
+                <input type="hidden" id="base64_Rosto_Frente" class="foto-base64">
+              </div>
+              
+              <!-- Perfil Direito -->
+              <div class="col-md-4 text-center">
+                <label class="form-label fw-bold">Perfil Direito</label>
+                <div class="border rounded bg-light d-flex align-items-center justify-content-center mx-auto" style="height: 220px; width: 165px; overflow: hidden;" id="boxFoto_PerfilDireito">
+                  <span class="material-symbols-outlined text-muted" style="font-size: 48px;">person</span>
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-2 w-75" type="button" onclick="abrirCamera('Rosto_Perfil_Direito', 'boxFoto_PerfilDireito')">Capturar Direito</button>
+                <input type="hidden" id="base64_Rosto_Perfil_Direito" class="foto-base64">
+              </div>
+              
+              <!-- Perfil Esquerdo -->
+              <div class="col-md-4 text-center">
+                <label class="form-label fw-bold">Perfil Esquerdo</label>
+                <div class="border rounded bg-light d-flex align-items-center justify-content-center mx-auto" style="height: 220px; width: 165px; overflow: hidden;" id="boxFoto_PerfilEsquerdo">
+                  <span class="material-symbols-outlined text-muted" style="font-size: 48px;">person</span>
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-2 w-75" type="button" onclick="abrirCamera('Rosto_Perfil_Esquerdo', 'boxFoto_PerfilEsquerdo')">Capturar Esquerdo</button>
+                <input type="hidden" id="base64_Rosto_Perfil_Esquerdo" class="foto-base64">
+              </div>
+            </div>
+
+            <h5 class="text-dark fw-bold border-bottom pb-2 mt-4">Características Especiais (Tatuagens)</h5>
+            <div id="containerTatuagens"></div>
+            <button class="btn btn-outline-success mt-3 shadow-sm" type="button" onclick="adicionarTatuagem()">
+              <span class="material-symbols-outlined align-middle fs-5">add_circle</span> Adicionar Nova Tatuagem
+            </button>
+          </div>
+
+          <!-- MODAL DA CÂMERA (Versão Ao Vivo para PC) -->
+          <div class="modal fade" id="modalCamera" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                  <h5 class="modal-title"><span class="material-symbols-outlined align-middle">photo_camera</span> Capturar Imagem</h5>
+                  <button type="button" class="btn-close btn-close-white" onclick="fecharCamera()"></button>
+                </div>
+                <div class="modal-body p-0 position-relative bg-black text-center" style="overflow: hidden;">
+                  <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" style="pointer-events: none; z-index: 10;">
+                      <div style="border: 2px dashed rgba(255,255,255,0.8); width: 240px; height: 320px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);"></div>
+                  </div>
+                  <video id="videoElement" autoplay playsinline style="width: 100%; height: 60vh; object-fit: cover; transform: scaleX(-1);"></video>
+                </div>
+                <div class="modal-footer bg-light justify-content-center">
+                  <button type="button" class="btn btn-secondary" onclick="fecharCamera()">Cancelar</button>
+                  <button type="button" class="btn btn-primary px-4 fw-bold" onclick="baterFoto()">
+                    <span class="material-symbols-outlined align-middle">lens</span> Tirar Foto
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+      // --- COLOQUE AQUI A URL QUE VOCÊ COPIOU NO PASSO 1 ---
+      const API_URL = "https://script.google.com/macros/s/AKfycbyUlic3-Bde78PdhizlY6UI2rMx64veR_rVaOREDwI4mEfNeIe6t5wWz95gtxWM_YKVHQ/exec";
+
+      // Simulador mágico para o sistema funcionar fora do Google sem precisar reescrever o código
+      const google = {
+        script: {
+          run: {
+            withSuccessHandler: function(onSuccess) { return { withFailureHandler: function(onFailure) { return criarChamada(onSuccess, onFailure); }, ...criarChamada(onSuccess, console.error) }; },
+            withFailureHandler: function(onFailure) { return { withSuccessHandler: function(onSuccess) { return criarChamada(onSuccess, onFailure); }, ...criarChamada(null, onFailure) }; }
+          }
+        }
+      };
+      function criarChamada(onSuccess, onFailure) {
+        return new Proxy({}, {
+          get: function(target, prop) {
+            if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') return undefined;
+            return function(...args) {
+              fetch(API_URL, { method: 'POST', body: JSON.stringify({ functionName: prop, args: args }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
+              .then(res => res.json()).then(data => {
+                if(data.error) { if(onFailure) onFailure(new Error(data.error)); else console.error("Erro Back-end:", data.error); }
+                else { if(onSuccess) onSuccess(data.result); }
+              }).catch(err => { if(onFailure) onFailure(err); });
+            }
+          }
+        });
+      }
+
+      // --- CÓDIGO DA CÂMERA AO VIVO PARA PC ---
+      let streamVideo = null;
+      let alvoAtual = { idInput: '', idBox: '' };
+
+      function abrirCamera(nomeArquivo, idBox) {
+          alvoAtual = { idInput: 'base64_' + nomeArquivo, idBox: idBox };
+          const modalCam = new bootstrap.Modal(document.getElementById('modalCamera'));
+          modalCam.show();
+          
+          // Abre a câmera diretamente no PC
+          navigator.mediaDevices.getUserMedia({ video: true })
+              .then(stream => {
+                  streamVideo = stream;
+                  document.getElementById('videoElement').srcObject = stream;
+              })
+              .catch(err => {
+                  Swal.fire("Erro", "Você precisa permitir o uso da câmera no navegador.", "error");
+                  fecharCamera();
+              });
+      }
+
+      function fecharCamera() {
+          if (streamVideo) { streamVideo.getTracks().forEach(track => track.stop()); streamVideo = null; }
+          const modalCam = bootstrap.Modal.getInstance(document.getElementById('modalCamera'));
+          if(modalCam) modalCam.hide();
+      }
+
+      function baterFoto() {
+          const video = document.getElementById('videoElement');
+          const canvas = document.createElement('canvas');
+          canvas.width = 480; canvas.height = 640; 
+          const ctx = canvas.getContext('2d');
+          const aspect = 3/4; const cw = video.videoWidth; const ch = video.videoHeight;
+          let sx, sy, sw, sh;
+          
+          if (cw / ch > aspect) { sh = ch; sw = ch * aspect; sx = (cw - sw) / 2; sy = 0; } 
+          else { sw = cw; sh = cw / aspect; sx = 0; sy = (ch - sh) / 2; }
+          
+          ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+          document.getElementById(alvoAtual.idInput).value = dataUrl;
+          document.getElementById(alvoAtual.idBox).innerHTML = `<img src="${dataUrl}" style="height:100%; width:100%; object-fit:cover;">`;
+          fecharCamera();
+      }
+
+      // Função para esconder/mostrar a Sidebar
+      function toggleSidebar() {
+        document.getElementById('sidebarMenu').classList.toggle('collapsed');
+        document.getElementById('mainContent').classList.toggle('expanded');
+      }
+
+      function mostrarToast(mensagem, tipo = 'info') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: tipo,
+          title: mensagem,
+          showConfirmButton: false,
+          timer: 3500,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+          }
+        });
+      }
+
+      function mostrarAlertaCentral(titulo, mensagem, tipo = 'success') {
+        Swal.fire({
+          title: titulo,
+          html: mensagem, // Usar "html" no lugar de "text" permite usar o negrito!
+          icon: tipo,
+          confirmButtonColor: '#004ba0'
+        });
+      }
+
+      window.onload = function() {
+        loadDynamicContent(); 
+        document.getElementById('campoDataTriagem').valueAsDate = new Date(); 
+        
+        const inputPront = document.getElementById("inputProntuario");
+        inputPront.addEventListener("keypress", function(event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            pesquisar();
+          }
+        });
+
+        inputPront.addEventListener("input", function() {
+          if (this.value.trim() === "") {
+            document.getElementById("campoPPL").value = "";
+            document.getElementById("campoNasc").value = "";
+            document.getElementById("campoMae").value = "";
+            document.getElementById("campoNaturalidade").value = "";
+            document.getElementById("campoUF").value = "";
+          }
+        });
+      };
+
+      function mudarAba(idAba) {
+        var triggerEl = document.getElementById(idAba);
+        var tab = new bootstrap.Tab(triggerEl);
+        tab.show();
+        window.scrollTo(0, 0); 
+      }
+
+      function pesquisar() {
+        const prontuario = document.getElementById("inputProntuario").value;
+        if(!prontuario) { mostrarToast("Digite um prontuário.", "warning"); return; }
+        
+        document.querySelector(".btn-search").innerText = "Buscando..."; 
+        google.script.run.withSuccessHandler(preencherCampos).buscarProntuario(prontuario);
+      }
+
+      function preencherCampos(resposta) {
+        document.querySelector(".btn-search").innerText = "Pesquisar"; 
+        
+        if(resposta && resposta.sucesso) {
+          document.getElementById("campoPPL").value = resposta.nomePPL;
+          document.getElementById("campoNasc").value = resposta.nascimento;
+          document.getElementById("campoMae").value = resposta.nomeMae;
+          document.getElementById("campoNaturalidade").value = resposta.naturalidade;
+          document.getElementById("campoUF").value = resposta.uf;
+          
+          bloquearCamposManuais(); // Garante que fiquem trancados se achar na base
+        } else { 
+          Swal.fire({
+            title: "Não encontrado",
+            text: "Prontuário não localizado na base. É um preso recém-chegado (plantão)?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: '#004ba0',
+            confirmButtonText: 'Sim, preencher manual',
+            cancelButtonText: 'Não, cancelar'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              desbloquearCamposManuais();
+              mostrarAlertaCentral("Modo Manual", "Campos desbloqueados! Pode preencher os dados. O texto ficará em maiúsculas automaticamente.", "info");
+            } else {
+              document.getElementById("inputProntuario").value = ""; 
+              bloquearCamposManuais(); // Limpa e tranca se ele cancelar
+            }
+          });
+        }
+      }
+
+      function desbloquearCamposManuais() {
+        // Pega todos os campos do topo
+        const campos = ["campoPPL", "campoNasc", "campoMae", "campoNaturalidade", "campoUF"];
+        campos.forEach(id => {
+          const el = document.getElementById(id);
+          el.readOnly = false; // Destranca
+          el.value = "";
+          el.classList.remove("bg-light"); // Tira aquele fundinho cinza
+          
+          // MÁGICA DA MAIÚSCULA: Aplica a regra a todos eles!
+          el.oninput = function() {
+            this.value = this.value.toUpperCase();
+          };
+        });
+        document.getElementById("campoPPL").focus(); // Já joga o cursor pro nome
+      }
+
+      function bloquearCamposManuais() {
+        const campos = ["campoPPL", "campoNasc", "campoMae", "campoNaturalidade", "campoUF"];
+        campos.forEach(id => {
+          const el = document.getElementById(id);
+          el.readOnly = true; // Tranca de novo
+          el.classList.add("bg-light"); // Volta o fundo cinza
+          el.oninput = null; // Tira a regra de maiúscula para não bugar outras coisas
+        });
+      }
+
+      function verificarConvivio() {
+        const conv = document.getElementById("dioqConv").value;
+        if (conv === "Não") { 
+          document.getElementById("divMotivoConv").style.display = "block"; 
+        } else { 
+          document.getElementById("divMotivoConv").style.display = "none"; 
+          document.getElementById("dioqMotivoConv").value = ""; 
+        }
+      }
+
+      function verificarEscolaridade() {
+        const ef = document.querySelector('input[name="ensinoF"]:checked');
+        const em = document.querySelector('input[name="ensinoM"]:checked');
+        const es = document.querySelector('input[name="ensinoS"]:checked');
+
+        // Lógica de Cascata: Um nível só pode abrir se o nível de cima estiver aberto e completo
+        let mostrarMedio = (ef && ef.value === 'Completo');
+        let mostrarSuperior = (mostrarMedio && em && em.value === 'Completo');
+        let mostrarCurso = (mostrarSuperior && es && es.value === 'Completo');
+
+        // 1. Controle do Ensino Médio
+        if (mostrarMedio) {
+          document.getElementById('divEnsinoMedio').classList.remove('escondido');
+        } else {
+          document.getElementById('divEnsinoMedio').classList.add('escondido');
+          // Limpa a seleção oculta
+          document.querySelectorAll('input[name="ensinoM"]').forEach(el => el.checked = false);
+        }
+
+        // 2. Controle do Ensino Superior
+        if (mostrarSuperior) {
+          document.getElementById('divEnsinoSuperior').classList.remove('escondido');
+        } else {
+          document.getElementById('divEnsinoSuperior').classList.add('escondido');
+          // Limpa a seleção oculta
+          document.querySelectorAll('input[name="ensinoS"]').forEach(el => el.checked = false);
+        }
+
+        // 3. Controle do Qual Curso
+        if (mostrarCurso) {
+          document.getElementById('divQualCurso').classList.remove('escondido');
+        } else {
+          document.getElementById('divQualCurso').classList.add('escondido');
+          // Limpa o texto digitado caso tenha (ajuste o ID 'pedCurso' se for diferente no seu HTML)
+          const campoCurso = document.querySelector('#divQualCurso input[type="text"]');
+          if (campoCurso) campoCurso.value = "";
+        }
+      }
+
+      function verificarInstituicao() {
+        const selectInst = document.getElementById("pedOutraInst").value;
+        if(selectInst === "Sim") { 
+          document.getElementById("divQualInst").style.display = "block"; 
+        } else { 
+          document.getElementById("divQualInst").style.display = "none"; 
+          document.querySelectorAll('input[name="pedInstPris"]').forEach(chk => chk.checked = false);
+        }
+      }
+      
+      function verificarFaccao() {
+        const faccao = document.getElementById("dioqFaccao").value;
+        if (faccao === "Sim") { document.getElementById("divQualFaccao").style.display = "block"; } else { document.getElementById("divQualFaccao").style.display = "none"; document.getElementById("dioqQualFaccao").value = ""; }
+      }
+
+      function verificarCertificacao() {
+        if(document.getElementById("intCert").checked) { document.getElementById("divCert").style.display = "block"; } 
+        else { document.getElementById("divCert").style.display = "none"; document.getElementById("certEnem").checked = false; document.getElementById("certEnceja").checked = false; }
+      }
+
+      function verificarCheckbox(idSelect, idDiv, nameChecks) {
+        if(document.getElementById(idSelect).value === "Sim") {
+          document.getElementById(idDiv).style.display = "block";
+        } else { 
+          document.getElementById(idDiv).style.display = "none"; 
+          document.querySelectorAll(`input[name="${nameChecks}"]`).forEach(c => c.checked = false); 
+        }
+      }
+
+      function verificarEstadoCivil() {
+        const val = document.getElementById("socEstadoCivil").value;
+        if(val === "Casado" || val === "União Estável" || val === "Amasiado") { document.getElementById("divConjuge").style.display = "block"; document.getElementById("divTempoUniao").style.display = "block"; }
+        else { document.getElementById("divConjuge").style.display = "none"; document.getElementById("divTempoUniao").style.display = "none"; document.getElementById("socNomeConjuge").value = ""; document.getElementById("socTempoUniao").value = ""; }
+      }
+
+      function verificarFilhos() {
+        if(document.getElementById("socFilhos").value === "Sim") { 
+          document.getElementById("divQtdFilhos").style.display = "block";
+        } else { 
+          document.getElementById("divQtdFilhos").style.display = "none";
+          document.getElementById("socQtdFilhos").value = ""; 
+        }
+      }
+
+      function verificarNaoLembra() {
+        const check = document.getElementById("chkNaoLembraTel").checked;
+        document.getElementById("divTel1").style.opacity = check ? "0.3" : "1";
+        document.getElementById("divTel2").style.opacity = check ? "0.3" : "1";
+        document.getElementById("socTel1").disabled = check; document.getElementById("socFalar1").disabled = check;
+        document.getElementById("socTel2").disabled = check; document.getElementById("socFalar2").disabled = check;
+      }
+
+      function verificarOS() {
+        const el = document.querySelector('input[name="radOS"]:checked');
+        if(el && el.value === "Outros") document.getElementById("socQualOS").style.display = "block";
+        else { document.getElementById("socQualOS").style.display = "none"; document.getElementById("socQualOS").value = ""; }
+      }
+
+      function salvarEGerarPDF() {
+        const prontuario = document.getElementById("inputProntuario").value;
+        if(!prontuario) { mostrarToast("Busque um PPL antes de salvar.", "warning"); return; }
+
+        if (document.getElementById("socDrogas").value === "Sim" && document.getElementById("aindaUsuario").value === "") {
+          mostrarToast("Por favor, informe se o PPL ainda é usuário de drogas.", "warning");
+          return;
+        }
+
+        const btnSalvar = document.getElementById("btnSalvarFinal");
+        const iconeSalvar = document.getElementById("iconeSalvar");
+        const textoSalvar = document.getElementById("textoSalvar");
+
+        btnSalvar.disabled = true;
+        iconeSalvar.innerText = "hourglass_empty";
+        textoSalvar.innerText = "Salvando...";
+
+        const getRadioVal = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ""; };
+        
+        const unidadesSelecionadas = Array.from(document.querySelectorAll('input[name="histPris"]:checked')).map(cb => cb.value).join(", ");
+        const pedUnidadesSelecionadas = Array.from(document.querySelectorAll('input[name="pedInstPris"]:checked')).map(cb => cb.value).join(", ");
+
+        const dataBruta = document.getElementById("campoDataTriagem").value;
+        let dataFormatada = "";
+        if(dataBruta) {
+          const partes = dataBruta.split("-");
+          dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        const dadosFormulario = {
+          dataTriagem: dataFormatada,
+          prontuario: prontuario, ppl: document.getElementById("campoPPL").value,
+          nascimento: document.getElementById("campoNasc").value, mae: document.getElementById("campoMae").value,
+          naturalidade: document.getElementById("campoNaturalidade").value, uf: document.getElementById("campoUF").value,
+          
+          dioqProfissao: document.getElementById("dioqProfissao").value, dioqVinculo: document.getElementById("dioqVinculo").value,
+          dioqTempoExp: document.getElementById("dioqTempoExp").value, dioqTrabPrisao: document.getElementById("dioqTrabPrisao").value,
+          dioqAtivOcasiao: document.getElementById("dioqAtivOcasiao").value, dioqEmpAnt: document.getElementById("dioqEmpAnt").value,
+          dioqOutrasHab: document.getElementById("dioqOutrasHab").value, dioqConv: document.getElementById("dioqConv").value,
+          dioqMotivoConv: document.getElementById("dioqMotivoConv").value, dioqFaccao: document.getElementById("dioqFaccao").value,
+          dioqQualFaccao: document.getElementById("dioqQualFaccao").value,
+          
+          dioqHistOutras: unidadesSelecionadas, 
+          
+          dioqAud: document.getElementById("dioqAud").value, dioqAgres: document.getElementById("dioqAgres").value,
+          dioqObs: document.getElementById("dioqObs") ? document.getElementById("dioqObs").value : "",
+          
+          pedFund: getRadioVal("ensinoF"), pedMedio: getRadioVal("ensinoM"), pedSup: getRadioVal("ensinoS"), 
+          pedCurso: document.getElementById("pedQualCurso").value, pedOutraInst: document.getElementById("pedOutraInst").value, 
+          pedQualInst: pedUnidadesSelecionadas,
+          pedEstudavaOrigem: getRadioVal("pedEstudavaOrigem"),
+          pedIntNao: document.getElementById("intNao").checked ? "Sim" : "Não", pedIntEja: document.getElementById("intEja").checked ? "Sim" : "Não",
+          pedIntCursos: document.getElementById("intCursos").checked ? "Sim" : "Não", pedIntLeitura: document.getElementById("intLeitura").checked ? "Sim" : "Não",
+          pedIntCert: document.getElementById("intCert").checked ? "Sim" : "Não", pedCertEnem: document.getElementById("certEnem").checked ? "Sim" : "Não",
+          pedCertEnceja: document.getElementById("certEnceja").checked ? "Sim" : "Não",
+          pedUnidadesEstudo: Array.from(document.querySelectorAll('input[name="unidadeEstudo"]:checked')).map(cb => cb.value).join(", "),
+
+          socQualSaude: Array.from(document.querySelectorAll('input[name="chkSaude"]:checked')).map(cb => cb.value).join(", ") + (document.getElementById("chkSaudeOutros").checked ? (", " + document.getElementById("qualSaudeOutros").value) : ""),
+          socQualDelito: Array.from(document.querySelectorAll('input[name="chkDelito"]:checked')).map(cb => cb.value).join(", "),
+          socQualDroga: Array.from(document.querySelectorAll('input[name="chkDrogas"]:checked')).map(cb => cb.value).join(", ") + (document.getElementById("chkDrogasOutros").checked ? (", " + document.getElementById("qualDrogaOutros").value) : ""),
+
+          socSaude: document.getElementById("socSaude").value, socDelito: document.getElementById("socDelito").value,
+          socDroga: document.getElementById("socDrogas").value, socIdadeDroga: document.getElementById("idadeDrogas").value,
+          socAindaUsuario: document.getElementById("aindaUsuario").value,
+          
+          socEstadoCivil: document.getElementById("socEstadoCivil").value, socNomeConjuge: document.getElementById("socNomeConjuge").value, socTempoUniao: document.getElementById("socTempoUniao").value,
+          socFilhos: document.getElementById("socFilhos").value, socQtdFilhos: document.getElementById("socQtdFilhos").value,
+          socResidiaCom: document.getElementById("socResidiaCom").value, socEndereco: formatarEnderecoDomicilio(),
+          
+          socNaoLembraTel: document.getElementById("chkNaoLembraTel").checked ? "Sim" : "Não",
+          socTel1: document.getElementById("socTel1").value, socFalar1: document.getElementById("socFalar1").value,
+          socTel2: document.getElementById("socTel2").value, socFalar2: document.getElementById("socFalar2").value,
+          
+          socApoio: document.getElementById("socApoio").value, socOS: getRadioVal("radOS"), socQualOS: document.getElementById("socQualOS").value
+        }
+
+        empacotarEEnviarFotos();
+        
+        // Novo comando que envia para o back-end gerar o PDF diretamente
+        google.script.run.withSuccessHandler((resposta) => {
+            if(resposta.sucesso) {
+              
+              // APENAS AVISO DE SUCESSO SIMPLES (Sem botão de imprimir e sem download)
+              mostrarAlertaCentral("Sucesso!", "A triagem foi salva e o PDF gerado no Drive!", "success");
+              
+              // Limpa os campos após sucesso
+              document.querySelectorAll("input[type=text], input[type=number], select, textarea").forEach(el => el.value = "");
+              document.querySelectorAll("input[type=radio], input[type=checkbox]").forEach(el => el.checked = false); 
+              document.getElementById("campoDataTriagem").valueAsDate = new Date(); 
+              
+              // Oculta as divs dinâmicas
+              document.getElementById("divEnsinoMedio").style.display = ""; 
+              document.getElementById("divEnsinoMedio").classList.add("escondido"); 
+              document.getElementById("divEnsinoSuperior").style.display = ""; 
+              document.getElementById("divEnsinoSuperior").classList.add("escondido"); 
+              document.getElementById("divQualCurso").style.display = ""; 
+              document.getElementById("divQualCurso").classList.add("escondido"); 
+              document.getElementById("divQualInst").style.display = "none";
+              document.getElementById("divUnidadesEstudo").style.display = "none";
+              document.getElementById("divQualFaccao").style.display = "none";
+              document.getElementById("divMotivoConv").style.display = "none"; 
+              document.getElementById("divCert").style.display = "none";
+              document.getElementById("divSaude").style.display = "none";
+              document.getElementById("divQualSaude").classList.add("escondido");
+              document.getElementById("divDelito").style.display = "none";
+              document.getElementById("divDrogasDetalhes").classList.add("escondido");
+              document.getElementById("divDrogasLista").style.display = "none";
+              document.getElementById("divQualDroga").classList.add("escondido");
+              document.getElementById("divConjuge").style.display = "none";
+              document.getElementById("divTempoUniao").style.display = "none";
+              document.getElementById("divQtdFilhos").style.display = "none";
+              document.getElementById("socQualOS").style.display = "none";
+              document.getElementById("campoPPL").readOnly = true;
+              
+              mudarAba('dioq-tab');
+            } else {
+              mostrarAlertaCentral("Erro", resposta.mensagem, "error");
+            }
+            
+            // Restaura o botão
+            btnSalvar.disabled = false;
+            document.getElementById("iconeSalvar").innerText = "save";
+            document.getElementById("textoSalvar").innerText = "Salvar Triagem";
+            
+          }).withFailureHandler((erro) => { 
+            mostrarAlertaCentral("Erro Crítico", erro.message, "error"); 
+            btnSalvar.disabled = false;
+            document.getElementById("iconeSalvar").innerText = "save";
+            document.getElementById("textoSalvar").innerText = "Salvar Triagem";
+          }).gerarPdfDireto(dadosFormulario);
+      }   
+
+      let filaDeProcessamento = [];
+      let indexProcesso = 0;
+
+      function atualizarRelogio() {
+        const agora = new Date();
+        const hora = String(agora.getHours()).padStart(2, '0');
+        const minuto = String(agora.getMinutes()).padStart(2, '0');
+        const segundo = String(agora.getSeconds()).padStart(2, '0');
+        document.getElementById('topo-relogio').innerText = `${hora}:${minuto}:${segundo}`;
+      }
+      setInterval(atualizarRelogio, 1000);
+      atualizarRelogio(); 
+
+      function loadDynamicContent() {
+        google.script.run.withSuccessHandler(base64Image => {
+          const logoImg = document.getElementById('profile-logo');
+          if (logoImg && base64Image.length > 100) { 
+            logoImg.src = base64Image;
+            logoImg.style.display = "block";
+          }
+        }).getLogoAsBase64(); 
+      }
+
+      function filtrarListaDelitos() {
+        const termoBusca = document.getElementById("filtroDelitos").value.toLowerCase();
+        const itensDelito = document.querySelectorAll(".delito-item");
+        
+        itensDelito.forEach(item => {
+          const textoItem = item.innerText.toLowerCase(); 
+          if (textoItem.includes(termoBusca)) {
+            item.style.display = ""; 
+          } else {
+            item.style.display = "none"; 
+          }
+        });
+      }
+
+      function filtrarListaSaude() {
+        const termoBusca = document.getElementById("filtroSaude").value.toLowerCase();
+        const itensSaude = document.querySelectorAll(".saude-item");
+        
+        itensSaude.forEach(item => {
+          const textoItem = item.innerText.toLowerCase(); 
+          if (textoItem.includes(termoBusca)) {
+            item.style.display = ""; 
+          } else {
+            item.style.display = "none"; 
+          }
+        });
+      }
+
+      function verificarOutraSaude() {
+        const chkOutros = document.getElementById('chkSaudeOutros');
+        if (chkOutros && chkOutros.checked) {
+          document.getElementById('divQualSaude').classList.remove('escondido');
+        } else {
+          document.getElementById('divQualSaude').classList.add('escondido');
+        }
+      }
+
+      function verificarOutraDroga() {
+        const chkOutros = document.getElementById('chkDrogasOutros');
+        if (chkOutros && chkOutros.checked) {
+          document.getElementById('divQualDroga').classList.remove('escondido');
+        } else {
+          document.getElementById('divQualDroga').classList.add('escondido');
+        }
+      }
+
+      function verificarDetalhesDrogas() {
+        const valorSelect = document.getElementById('socDrogas').value;
+        const divDetalhes = document.getElementById('divDrogasDetalhes');
+        
+        if (valorSelect === 'Sim') {
+          divDetalhes.classList.remove('escondido');
+        } else {
+          divDetalhes.classList.add('escondido');
+          document.getElementById('idadeDrogas').value = '';
+          document.getElementById('aindaUsuario').value = '';
+        }
+      }
+
+      function formatarEnderecoDomicilio() {
+        let rua = document.getElementById("socEndRua").value.trim();
+        let num = document.getElementById("socEndNum").value.trim();
+        let bairro = document.getElementById("socEndBairro").value.trim();
+
+        // Se o usuário deixar as 3 caixas em branco, não preenche nada
+        if (!rua && !num && !bairro) return ""; 
+
+        // Função interna melhorada para reconhecer barras (/) e traços (-)
+        const capitalizar = (texto) => {
+          return texto.toLowerCase().replace(/(?:^|[\s\/-])\S/g, function(a) { return a.toUpperCase(); })
+                      .replace(/\s(De|Da|Do|Das|Dos|E)\s/g, function(match) { return match.toLowerCase(); });
+        };
+
+        rua = capitalizar(rua);
+        bairro = capitalizar(bairro);
+        num = num.toUpperCase(); 
+
+        // MÁGICA NOVA: Força a sigla do estado (UF) a ficar toda em maiúscula se estiver no final (ex: /pr -> /PR, - sp -> - SP)
+        bairro = bairro.replace(/[\/-]\s*([a-zA-Z]{2})$/, function(match) {
+          return match.toUpperCase();
+        });
+
+        // Remove as palavras repetidas do começo
+        rua = rua.replace(/^(Rua|Avenida|Av\.|Av|Travessa|Viela)\s+/i, '');
+        num = num.replace(/^(Nº|N°|N\.|N|Número|Numero|-)\s*/i, '');
+
+        // Preenchimento automático caso esqueça algum bloco
+        rua = rua || "Não informado";
+        num = num || "S/N";
+        bairro = bairro || "Não informado";
+
+        // Junta tudo no padrão perfeito
+        return `Rua: ${rua}, nº ${num} - ${bairro}`;
+      }
+
+      // Alterna entre a tela de Assinaturas e a tela de Triagem
+      function alternarTelas(idTela, linkClicado) {
+        // Esconde todas as telas
+        document.getElementById('telaAssinatura').classList.add('escondido');
+        document.getElementById('telaTriagem').classList.add('escondido');
+        
+        // Remove a classe 'active' de todos os links do menu lateral
+        document.querySelectorAll('.sidebar-nav a').forEach(el => el.classList.remove('active'));
+        
+        // Mostra a tela selecionada e marca o link como ativo
+        document.getElementById(idTela).classList.remove('escondido');
+        linkClicado.classList.add('active');
+      }
+
+      // Dispara a geração (Serve tanto para Lote quanto Individual)
+      function acionarGeracao(idCampoInput, idBotao) {
+        const textoProntuarios = document.getElementById(idCampoInput).value;
+        const botao = document.getElementById(idBotao);
+
+        if (!textoProntuarios.trim()) {
+          mostrarToast("Insira ao menos um prontuário.", "warning");
+          return;
+        }
+
+        // Muda estado do botão para carregando
+        const textoOriginal = botao.innerHTML;
+        botao.disabled = true;
+        botao.innerHTML = `<span class="material-symbols-outlined spinner-border spinner-border-sm me-2"></span> Gerando PDFs... Aguarde!`;
+
+        google.script.run.withSuccessHandler((resposta) => {
+          if (resposta.sucesso) {
+            // Cria um iframe oculto na página que força o navegador a baixar o arquivo na hora
+            if (resposta.urlDownload) {
+              const iframe = document.createElement('iframe');
+              iframe.style.display = 'none';
+              iframe.src = resposta.urlDownload;
+              document.body.appendChild(iframe);
+              
+              // Remove o iframe depois de alguns segundos para manter a página limpa
+              setTimeout(() => document.body.removeChild(iframe), 5000);
+            }
+
+            // 2. Mostra o aviso de sucesso
+            mostrarAlertaCentral("Sucesso!", resposta.mensagem, "success");
+            
+            // 3. MÁGICA DA MEMÓRIA: Se teve faltantes, mostra a sessão avulsa e o lembrete!
+            const divLembrete = document.getElementById("lembreteFaltantes");
+            const sessaoAvulsas = document.getElementById("sessaoFichasAvulsas"); // Pega a sessão inteira
+            
+            if (resposta.faltantes && resposta.faltantes.length > 0) {
+              if(divLembrete) {
+                divLembrete.classList.remove("escondido");
+                document.getElementById("textoLembreteFaltantes").innerText = resposta.faltantes.join(", ");
+              }
+              // Faz a sessão Avulsa aparecer magicamente!
+              if(sessaoAvulsas) sessaoAvulsas.classList.remove("escondido");
+              
+              // Deixa apenas os faltantes na caixa de texto para facilitar
+              document.getElementById(idCampoInput).value = resposta.faltantes.join("\n");
+            } else {
+              document.getElementById(idCampoInput).value = ""; 
+              if(divLembrete) divLembrete.classList.add("escondido");
+              if(sessaoAvulsas) sessaoAvulsas.classList.add("escondido"); // Esconde se deu tudo certo
+            }
+            
+          } else {
+            mostrarAlertaCentral("Atenção", resposta.mensagem, "warning");
+            
+            const divLembrete = document.getElementById("lembreteFaltantes");
+            const sessaoAvulsas = document.getElementById("sessaoFichasAvulsas");
+            
+            if (resposta.faltantes && resposta.faltantes.length > 0) {
+              if (divLembrete) {
+                divLembrete.classList.remove("escondido");
+                document.getElementById("textoLembreteFaltantes").innerText = resposta.faltantes.join(", ");
+              }
+              if (sessaoAvulsas) sessaoAvulsas.classList.remove("escondido");
+              document.getElementById(idCampoInput).value = resposta.faltantes.join("\n");
+            }
+          }
+          // Restaura o botão
+          botao.disabled = false;
+          botao.innerHTML = textoOriginal;
+
+        }).withFailureHandler((erro) => {
+          mostrarAlertaCentral("Erro Crítico", erro.message, "error");
+          botao.disabled = false;
+          botao.innerHTML = textoOriginal;
+        }).gerarDocsAssinatura(textoProntuarios);
+      }
+
+      function toggleUnidadesEstudo(mostrar) {
+        const divUnidades = document.getElementById("divUnidadesEstudo");
+        if (mostrar) {
+          divUnidades.classList.remove("escondido");
+          divUnidades.style.display = "block";
+        } else {
+          divUnidades.classList.add("escondido");
+          divUnidades.style.display = "none";
+          // Desmarca todas as caixinhas se o usuário clicar em "Não" (Efeito cascata limpo)
+          document.querySelectorAll('input[name="unidadeEstudo"]').forEach(cb => cb.checked = false);
+        }
+      }
+
+      let arrayAvulsos = []; // Guarda a listinha do plantão
+
+      function adicionarFichaAvulsa() {
+        const pront = document.getElementById("inputProntAvulso").value.trim();
+        const nome = document.getElementById("inputNomeAvulso").value.trim().toUpperCase();
+
+        if(!pront || !nome) {
+          mostrarAlertaCentral("Atenção", "Preencha o prontuário e o nome para adicionar.", "warning");
+          return;
+        }
+
+        // Adiciona na lista
+        arrayAvulsos.push({ prontuario: pront, ppl: nome });
+        
+        // Limpa as caixinhas para o próximo
+        document.getElementById("inputProntAvulso").value = "";
+        document.getElementById("inputNomeAvulso").value = "";
+        
+        atualizarTelaAvulsos();
+        const divLembrete = document.getElementById("lembreteFaltantes");
+        if(divLembrete) divLembrete.classList.add("escondido");
+      }
+
+      function removerAvulso(index) {
+        arrayAvulsos.splice(index, 1);
+        atualizarTelaAvulsos();
+      }
+
+      function atualizarTelaAvulsos() {
+        const ul = document.getElementById("listaFichasAvulsas");
+        const btnGerar = document.getElementById("btnGerarAvulso");
+        ul.innerHTML = "";
+
+        arrayAvulsos.forEach((item, index) => {
+          ul.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span><strong>${item.prontuario}</strong> - ${item.ppl}</span>
+              <button class="btn btn-sm btn-danger" onclick="removerAvulso(${index})">
+                <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+              </button>
+            </li>
+          `;
+        });
+
+        // Mostra o botão gerar apenas se tiver alguém na lista
+        if (arrayAvulsos.length > 0) {
+          btnGerar.classList.remove("escondido");
+        } else {
+          btnGerar.classList.add("escondido");
+        }
+      }
+
+      function acionarGeracaoAvulsa() {
+        const btnGerar = document.getElementById("btnGerarAvulso");
+        btnGerar.disabled = true;
+        btnGerar.innerHTML = "Gerando Fichas Avulsas, aguarde...";
+
+        google.script.run.withSuccessHandler((resposta) => {
+          if (resposta.sucesso) {
+            
+            // Download invisível
+            if (resposta.urlDownload) {
+              const iframe = document.createElement('iframe');
+              iframe.style.display = 'none';
+              iframe.src = resposta.urlDownload;
+              document.body.appendChild(iframe);
+              setTimeout(() => document.body.removeChild(iframe), 5000);
+            }
+
+            Swal.fire({
+              title: "Sucesso!",
+              html: resposta.mensagem,
+              icon: "success",
+              confirmButtonColor: '#004ba0'
+            });
+
+            // Limpa tudo após o sucesso
+            arrayAvulsos = [];
+            atualizarTelaAvulsos();
+            
+            // -------------------------------------------------------------
+            // AS LINHAS NOVAS ESTÃO AQUI: 
+            // Escondem o lembrete, a sessão inteira e limpam a caixa de prontuários!
+            // -------------------------------------------------------------
+            const divLembrete = document.getElementById("lembreteFaltantes");
+            if (divLembrete) divLembrete.classList.add("escondido");
+            
+            // Esconde a sessão inteira de Fichas Avulsas de novo
+            const sessaoAvulsas = document.getElementById("sessaoFichasAvulsas");
+            if (sessaoAvulsas) sessaoAvulsas.classList.add("escondido");
+            
+            document.getElementById("campoLoteProntuarios").value = "";
+            
+          } else {
+            mostrarAlertaCentral("Erro", resposta.mensagem, "error");
+          }
+          btnGerar.disabled = false;
+          btnGerar.innerHTML = '<span class="material-symbols-outlined align-middle">print</span> Gerar Lote Avulso';
+
+        }).gerarDocsAvulsosBackEnd(arrayAvulsos); // Chama a nova função no Back-end
+      }
+
+      // --- INÍCIO: SISTEMA DE FOTOS E WEBCAM ---
+      const posicoesFrontal = [
+        "01 - Frontal", "02 - Orbitária", "03 - Auricular", "04 - Masseteriana", "05 - Malar", "06 - Nasal", "07 - Bucinadora", "08 - Labial", "09 - Metoniana", "10 - Carotidiana", "11 - Supra Hioidea", "12 - Supraclavicular", "13 - Infra Hioidea", "14 - Clavicular", "15 - Infraclavicular", "16 - Torácica", "17 - Mamária", "18 - Mamilar", "19 - Esternal", "20 - Hipocôndrio", "21 - Epigástrica", "22 - Flanco", "23 - Mesogástrica", "24 - Umbilical", "25 - Fossa Ilíaca", "26 - Hipogástrica", "27 - Pubiana", "28 - Crural", "29 - (H) Peniana", "30 - Ilíaca", "31 - (H) Escrotal", "32 - Terço Superior do Braço", "33 - Terço Médio do Braço", "34 - Terço Inferior do Braço", "35 - Lateral do Cotovelo", "36 - Terço Superior do Antebraço", "37 - Terço Médio do Antebraço", "38 - Terço Inferior do Antebraço", "39 - Punho", "40 - Palmar da Mão", "41 - Terço Superior da Coxa", "42 - Terço Médio da Coxa", "43 - Terço Inferior da Coxa", "44 - Rotuliano", "45 - Face Anterior do Joelho", "46 - Terço Superior da Perna", "47 - Lateral Externa da Perna", "48 - Terço Médio da Perna", "49 - Terço Inferior da Perna", "50 - Lateral Interna da Perna", "51 - Dorsal do Pé", "52 - Inguinal", "53 - (M) Vulvo Vaginal", "54 - Polegar", "55 - Indicador", "56 - Médio", "57 - Anelar", "58 - Mínimo", "59 - Hálux", "60 - Segundo Pododáctilo", "61 - Terceiro Pododáctilo", "62 - Quarto Pododáctilo", "63 - Quinto Pododáctilo", "64 - Hélix", "65 - Antélix", "66 - Concha Auricular", "67 - Lóbulo", "68 - Língua"
+      ];
+
+      const posicoesCostas = [
+        "1 - Parietal", "2 - Occipital", "3 - Temporal", "4 - Cervical", "5 - Supra Escapular", "6 - Escapular", "7 - Terço Superior das Costas", "8 - Lombar", "9 - Ilíaca", "10 - Espondiléia", "11 - Sacro Coccígeia", "12 - Glútea", "13 - Terço Superior da Coxa", "14 - Terço Médio da Coxa", "15 - Terço Inferior da Coxa", "16 - Poplitéia", "17 - Terço Superior da Perna", "18 - Terço Médio da Perna", "19 - Terço Inferior da Perna", "20 - Maleolar Externo", "21 - Calcaniana", "22 - Borda Externa do Pé", "23 - Deltóidiana", "24 - Terço Superior do Braço", "25 - Terço Médio do Braço", "26 - Terço Inferior do Braço", "27 - Cotovelo", "28 - Terço Superior do Antebraço", "29 - Terço Médio do Antebraço", "30 - Terço Inferior do Antebraço", "31 - Punho", "32 - Face Dorsal da Mão", "33 - Polegar", "34 - Indicador", "35 - Médio", "36 - Anelar", "37 - Mínimo"
+      ];
+
+      let streamVideo = null;
+      let alvoAtual = { idInput: '', idBox: '' };
+
+      function abrirCamera(nomeArquivo, idBox) {
+          alvoAtual = { idInput: 'base64_' + nomeArquivo, idBox: idBox };
+          const modalCam = new bootstrap.Modal(document.getElementById('modalCamera'));
+          modalCam.show();
+          
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+              .then(stream => {
+                  streamVideo = stream;
+                  document.getElementById('videoElement').srcObject = stream;
+              })
+              .catch(err => {
+                  fecharCamera();
+                  
+                  // AQUI ENTRA A SUA SOLUÇÃO 2!
+                  Swal.fire({
+                    title: "Câmera Bloqueada pelo Google",
+                    text: "Para liberar a câmera direto no sistema, precisamos abrir a aplicação em uma aba limpa. Atenção: se você já preencheu dados do preso, eles serão apagados.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: '#004ba0',
+                    confirmButtonText: 'Abrir Aba Limpa Agora',
+                    cancelButtonText: 'Cancelar'
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      // Chama o Back-end para pegar a URL oficial e abre na mesma guia
+                      google.script.run.withSuccessHandler((urlOficial) => {
+                          window.open(urlOficial, '_top');
+                      }).obterUrlDoSistema();
+                    }
+                  });
+              });
+      }
+
+      function fecharCamera() {
+          if (streamVideo) {
+              streamVideo.getTracks().forEach(track => track.stop());
+              streamVideo = null;
+          }
+          const modalCam = bootstrap.Modal.getInstance(document.getElementById('modalCamera'));
+          if(modalCam) modalCam.hide();
+      }
+
+      function baterFoto() {
+          const video = document.getElementById('videoElement');
+          const canvas = document.createElement('canvas');
+          canvas.width = 480; 
+          canvas.height = 640; 
+          const ctx = canvas.getContext('2d');
+          
+          const aspect = 3/4;
+          const cw = video.videoWidth;
+          const ch = video.videoHeight;
+          let sx, sy, sw, sh;
+          
+          if (cw / ch > aspect) { 
+              sh = ch; sw = ch * aspect;
+              sx = (cw - sw) / 2; sy = 0;
+          } else { 
+              sw = cw; sh = cw / aspect;
+              sx = 0; sy = (ch - sh) / 2;
+          }
+          
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+          document.getElementById(alvoAtual.idInput).value = dataUrl;
+          document.getElementById(alvoAtual.idBox).innerHTML = `<img src="${dataUrl}" style="height:100%; width:100%; object-fit:cover;">`;
+          
+          fecharCamera();
+      }
+
+      function adicionarTatuagem() {
+          contadorTattoo++;
+          const div = document.createElement('div');
+          div.className = 'card p-3 mb-3 border-secondary shadow-sm bloco-tatuagem';
+          div.innerHTML = `
+            <div class="row g-2 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted mb-1">SubTipo (Ex: Nome, Flor):</label>
+                <input type="text" class="form-control tattoo-subtipo" placeholder="O que é a tatuagem?">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted mb-1">Visão:</label>
+                <select class="form-select tattoo-visao" onchange="atualizarPosicoes(this, ${contadorTattoo})">
+                  <option value="">Selecione...</option>
+                  <option value="FRONTAL">Frontal</option>
+                  <option value="COSTAS">Costas</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted mb-1">Lado:</label>
+                <select class="form-select tattoo-lado">
+                  <option value="CENTRAL">Central (N/A)</option>
+                  <option value="ESQUERDO">Esquerdo</option>
+                  <option value="DIREITO">Direito</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted mb-1">Posição (Pesquise):</label>
+                <!-- Usando Datalist: Permite pesquisar e selecionar ao mesmo tempo! -->
+                <input class="form-control tattoo-posicao" list="datalist_${contadorTattoo}" placeholder="Escolha a Visão antes">
+                <datalist id="datalist_${contadorTattoo}"></datalist>
+              </div>
+              <div class="col-md-2 text-center">
+                <button class="btn btn-outline-primary w-100" type="button" onclick="abrirCamera('Tattoo_${contadorTattoo}', 'boxFotoTattoo_${contadorTattoo}')">
+                    <span class="material-symbols-outlined align-middle fs-6">photo_camera</span> Câmera
+                </button>
+                <input type="hidden" id="base64_Tattoo_${contadorTattoo}" class="foto-base64-tattoo">
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-12 d-flex justify-content-between align-items-center">
+                  <button class="btn btn-sm btn-danger" type="button" onclick="this.closest('.bloco-tatuagem').remove()">Excluir Tatuagem</button>
+                  <div id="boxFotoTattoo_${contadorTattoo}" class="border rounded bg-light d-flex align-items-center justify-content-center" style="height: 100px; width: 75px; overflow: hidden;">
+                      <span class="material-symbols-outlined text-muted">image</span>
+                  </div>
+              </div>
+            </div>
+          `;
+          document.getElementById('containerTatuagens').appendChild(div);
+      }
+
+      function atualizarPosicoes(selectVisao, id) {
+          const datalist = document.getElementById(`datalist_${id}`);
+          const inputPosicao = document.querySelector(`input[list="datalist_${id}"]`);
+          
+          inputPosicao.value = ""; 
+          inputPosicao.placeholder = "Digite para pesquisar...";
+          datalist.innerHTML = ''; 
+          
+          let arrayUsar = selectVisao.value === "FRONTAL" ? posicoesFrontal : (selectVisao.value === "COSTAS" ? posicoesCostas : []);
+          
+          arrayUsar.forEach(pos => {
+              const opt = document.createElement('option');
+              opt.value = pos;
+              datalist.appendChild(opt);
+          });
+      }
+
+      // Função que varre a tela recolhendo todas as fotos para enviar ao Drive
+      function empacotarEEnviarFotos() {
+          const prontuario = document.getElementById("inputProntuario").value;
+          const ppl = document.getElementById("campoPPL").value;
+          const dataBruta = document.getElementById("campoDataTriagem").value;
+          let dataFormatada = dataBruta ? `${dataBruta.split("-")[2]}/${dataBruta.split("-")[1]}/${dataBruta.split("-")[0]}` : "";
+          
+          let imagens = [];
+          
+          // 1. Pega as fotos principais do rosto
+          ['Frente', 'Perfil_Direito', 'Perfil_Esquerdo'].forEach((pos, i) => {
+              let input = document.getElementById(`base64_Rosto_${pos}`);
+              if(input && input.value) {
+                  imagens.push({ nomeArquivo: `0${i+1}_Rosto_${pos}`, base64: input.value });
+              }
+          });
+          
+          // 2. Pega as tatuagens e gera os nomes complexos automaticamente
+          document.querySelectorAll('.bloco-tatuagem').forEach((bloco, idx) => {
+              let inputBase64 = bloco.querySelector('.foto-base64-tattoo').value;
+              if(inputBase64) {
+                  // Formata o texto para tirar acentos e espaços (Ex: FLOR -> FLOR, Braço -> BRACO)
+                  const limparTexto = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").toUpperCase();
+                  
+                  let subtipo = limparTexto(bloco.querySelector('.tattoo-subtipo').value || "OUTRA");
+                  let visao = bloco.querySelector('.tattoo-visao').value || "VISAONAOINFORMADA";
+                  let lado = bloco.querySelector('.tattoo-lado').value;
+                  let posicao = limparTexto(bloco.querySelector('.tattoo-posicao').value || "POSICAONAOINFORMADA");
+                  
+                  let numero = (idx + 4).toString().padStart(2, '0'); 
+                  let nomeFinal = `${numero}_TATUAGEM_${subtipo}_${visao}_${posicao}_${lado}`;
+                  
+                  imagens.push({ nomeArquivo: nomeFinal, base64: inputBase64 });
+              }
+          });
+          
+          if(imagens.length > 0) {
+              google.script.run.withSuccessHandler((res) => console.log(res.mensagem)).salvarFotosDrive({
+                  dataTriagem: dataFormatada,
+                  prontuario: prontuario,
+                  ppl: ppl,
+                  imagens: imagens
+              });
+          }
+      }
+      // --- FIM: SISTEMA DE FOTOS E WEBCAM ---
+    </script>
+  </body>
+</html>
