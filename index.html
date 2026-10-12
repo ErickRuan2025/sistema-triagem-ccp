@@ -1039,7 +1039,7 @@
           get: function(target, prop) {
             if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') return undefined;
             return function(...args) {
-              fetch(API_URL, { method: 'POST', body: JSON.stringify({ functionName: prop, args: args }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
+              fetch(API_URL, { redirect: 'follow', method: 'POST', body: JSON.stringify({ functionName: prop, args: args }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
               .then(res => res.json()).then(data => {
                 if(data.error) { if(onFailure) onFailure(new Error(data.error)); else console.error("Erro Back-end:", data.error); }
                 else { if(onSuccess) onSuccess(data.result); }
@@ -1052,6 +1052,7 @@
       // --- CÓDIGO DA CÂMERA AO VIVO PARA PC ---
       let streamVideo = null;
       let alvoAtual = { idInput: '', idBox: '' };
+      let contadorTattoo = 0; // CORRIGIDO: A variável que faltava e quebrava o botão de tatuagem!
 
       function abrirCamera(nomeArquivo, idBox) {
           alvoAtual = { idInput: 'base64_' + nomeArquivo, idBox: idBox };
@@ -1121,15 +1122,20 @@
       function mostrarAlertaCentral(titulo, mensagem, tipo = 'success') {
         Swal.fire({
           title: titulo,
-          html: mensagem, // Usar "html" no lugar de "text" permite usar o negrito!
+          html: mensagem, 
           icon: tipo,
           confirmButtonColor: '#004ba0'
         });
       }
 
-      window.onload = function() {
+      // CORRIGIDO: Agora carrega a data certa usando o Fuso Horário Local (Brasil) em vez de UTC
+      document.addEventListener("DOMContentLoaded", function() {
         loadDynamicContent(); 
-        document.getElementById('campoDataTriagem').valueAsDate = new Date(); 
+        
+        const hoje = new Date();
+        const offset = hoje.getTimezoneOffset() * 60000;
+        const dataLocal = new Date(hoje.getTime() - offset).toISOString().split('T')[0];
+        document.getElementById('campoDataTriagem').value = dataLocal; 
         
         const inputPront = document.getElementById("inputProntuario");
         inputPront.addEventListener("keypress", function(event) {
@@ -1148,7 +1154,7 @@
             document.getElementById("campoUF").value = "";
           }
         });
-      };
+      });
 
       function mudarAba(idAba) {
         var triggerEl = document.getElementById(idAba);
@@ -1175,7 +1181,7 @@
           document.getElementById("campoNaturalidade").value = resposta.naturalidade;
           document.getElementById("campoUF").value = resposta.uf;
           
-          bloquearCamposManuais(); // Garante que fiquem trancados se achar na base
+          bloquearCamposManuais(); 
         } else { 
           Swal.fire({
             title: "Não encontrado",
@@ -1191,36 +1197,34 @@
               mostrarAlertaCentral("Modo Manual", "Campos desbloqueados! Pode preencher os dados. O texto ficará em maiúsculas automaticamente.", "info");
             } else {
               document.getElementById("inputProntuario").value = ""; 
-              bloquearCamposManuais(); // Limpa e tranca se ele cancelar
+              bloquearCamposManuais(); 
             }
           });
         }
       }
 
       function desbloquearCamposManuais() {
-        // Pega todos os campos do topo
         const campos = ["campoPPL", "campoNasc", "campoMae", "campoNaturalidade", "campoUF"];
         campos.forEach(id => {
           const el = document.getElementById(id);
-          el.readOnly = false; // Destranca
+          el.readOnly = false; 
           el.value = "";
-          el.classList.remove("bg-light"); // Tira aquele fundinho cinza
+          el.classList.remove("bg-light"); 
           
-          // MÁGICA DA MAIÚSCULA: Aplica a regra a todos eles!
           el.oninput = function() {
             this.value = this.value.toUpperCase();
           };
         });
-        document.getElementById("campoPPL").focus(); // Já joga o cursor pro nome
+        document.getElementById("campoPPL").focus(); 
       }
 
       function bloquearCamposManuais() {
         const campos = ["campoPPL", "campoNasc", "campoMae", "campoNaturalidade", "campoUF"];
         campos.forEach(id => {
           const el = document.getElementById(id);
-          el.readOnly = true; // Tranca de novo
-          el.classList.add("bg-light"); // Volta o fundo cinza
-          el.oninput = null; // Tira a regra de maiúscula para não bugar outras coisas
+          el.readOnly = true; 
+          el.classList.add("bg-light"); 
+          el.oninput = null; 
         });
       }
 
@@ -1239,35 +1243,28 @@
         const em = document.querySelector('input[name="ensinoM"]:checked');
         const es = document.querySelector('input[name="ensinoS"]:checked');
 
-        // Lógica de Cascata: Um nível só pode abrir se o nível de cima estiver aberto e completo
         let mostrarMedio = (ef && ef.value === 'Completo');
         let mostrarSuperior = (mostrarMedio && em && em.value === 'Completo');
         let mostrarCurso = (mostrarSuperior && es && es.value === 'Completo');
 
-        // 1. Controle do Ensino Médio
         if (mostrarMedio) {
           document.getElementById('divEnsinoMedio').classList.remove('escondido');
         } else {
           document.getElementById('divEnsinoMedio').classList.add('escondido');
-          // Limpa a seleção oculta
           document.querySelectorAll('input[name="ensinoM"]').forEach(el => el.checked = false);
         }
 
-        // 2. Controle do Ensino Superior
         if (mostrarSuperior) {
           document.getElementById('divEnsinoSuperior').classList.remove('escondido');
         } else {
           document.getElementById('divEnsinoSuperior').classList.add('escondido');
-          // Limpa a seleção oculta
           document.querySelectorAll('input[name="ensinoS"]').forEach(el => el.checked = false);
         }
 
-        // 3. Controle do Qual Curso
         if (mostrarCurso) {
           document.getElementById('divQualCurso').classList.remove('escondido');
         } else {
           document.getElementById('divQualCurso').classList.add('escondido');
-          // Limpa o texto digitado caso tenha (ajuste o ID 'pedCurso' se for diferente no seu HTML)
           const campoCurso = document.querySelector('#divQualCurso input[type="text"]');
           if (campoCurso) campoCurso.value = "";
         }
@@ -1409,19 +1406,17 @@
 
         empacotarEEnviarFotos();
         
-        // Novo comando que envia para o back-end gerar o PDF diretamente
         google.script.run.withSuccessHandler((resposta) => {
             if(resposta.sucesso) {
-              
-              // APENAS AVISO DE SUCESSO SIMPLES (Sem botão de imprimir e sem download)
               mostrarAlertaCentral("Sucesso!", "A triagem foi salva e o PDF gerado no Drive!", "success");
               
-              // Limpa os campos após sucesso
               document.querySelectorAll("input[type=text], input[type=number], select, textarea").forEach(el => el.value = "");
               document.querySelectorAll("input[type=radio], input[type=checkbox]").forEach(el => el.checked = false); 
-              document.getElementById("campoDataTriagem").valueAsDate = new Date(); 
               
-              // Oculta as divs dinâmicas
+              const hoje = new Date();
+              const dataLocal = new Date(hoje.getTime() - (hoje.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+              document.getElementById('campoDataTriagem').value = dataLocal; 
+              
               document.getElementById("divEnsinoMedio").style.display = ""; 
               document.getElementById("divEnsinoMedio").classList.add("escondido"); 
               document.getElementById("divEnsinoSuperior").style.display = ""; 
@@ -1450,7 +1445,6 @@
               mostrarAlertaCentral("Erro", resposta.mensagem, "error");
             }
             
-            // Restaura o botão
             btnSalvar.disabled = false;
             document.getElementById("iconeSalvar").innerText = "save";
             document.getElementById("textoSalvar").innerText = "Salvar Triagem";
@@ -1479,9 +1473,12 @@
       function loadDynamicContent() {
         google.script.run.withSuccessHandler(base64Image => {
           const logoImg = document.getElementById('profile-logo');
+          // Se for menor que 100 caracteres, significa que o Google enviou o "Erro de Permissão" em formato de GIF invisível
           if (logoImg && base64Image.length > 100) { 
             logoImg.src = base64Image;
             logoImg.style.display = "block";
+          } else {
+            console.warn("Logo não encontrado ou sem permissão de acesso público no Drive.");
           }
         }).getLogoAsBase64(); 
       }
@@ -1550,10 +1547,8 @@
         let num = document.getElementById("socEndNum").value.trim();
         let bairro = document.getElementById("socEndBairro").value.trim();
 
-        // Se o usuário deixar as 3 caixas em branco, não preenche nada
         if (!rua && !num && !bairro) return ""; 
 
-        // Função interna melhorada para reconhecer barras (/) e traços (-)
         const capitalizar = (texto) => {
           return texto.toLowerCase().replace(/(?:^|[\s\/-])\S/g, function(a) { return a.toUpperCase(); })
                       .replace(/\s(De|Da|Do|Das|Dos|E)\s/g, function(match) { return match.toLowerCase(); });
@@ -1563,39 +1558,30 @@
         bairro = capitalizar(bairro);
         num = num.toUpperCase(); 
 
-        // MÁGICA NOVA: Força a sigla do estado (UF) a ficar toda em maiúscula se estiver no final (ex: /pr -> /PR, - sp -> - SP)
         bairro = bairro.replace(/[\/-]\s*([a-zA-Z]{2})$/, function(match) {
           return match.toUpperCase();
         });
 
-        // Remove as palavras repetidas do começo
         rua = rua.replace(/^(Rua|Avenida|Av\.|Av|Travessa|Viela)\s+/i, '');
         num = num.replace(/^(Nº|N°|N\.|N|Número|Numero|-)\s*/i, '');
 
-        // Preenchimento automático caso esqueça algum bloco
         rua = rua || "Não informado";
         num = num || "S/N";
         bairro = bairro || "Não informado";
 
-        // Junta tudo no padrão perfeito
         return `Rua: ${rua}, nº ${num} - ${bairro}`;
       }
 
-      // Alterna entre a tela de Assinaturas e a tela de Triagem
       function alternarTelas(idTela, linkClicado) {
-        // Esconde todas as telas
         document.getElementById('telaAssinatura').classList.add('escondido');
         document.getElementById('telaTriagem').classList.add('escondido');
         
-        // Remove a classe 'active' de todos os links do menu lateral
         document.querySelectorAll('.sidebar-nav a').forEach(el => el.classList.remove('active'));
         
-        // Mostra a tela selecionada e marca o link como ativo
         document.getElementById(idTela).classList.remove('escondido');
         linkClicado.classList.add('active');
       }
 
-      // Dispara a geração (Serve tanto para Lote quanto Individual)
       function acionarGeracao(idCampoInput, idBotao) {
         const textoProntuarios = document.getElementById(idCampoInput).value;
         const botao = document.getElementById(idBotao);
@@ -1605,45 +1591,38 @@
           return;
         }
 
-        // Muda estado do botão para carregando
         const textoOriginal = botao.innerHTML;
         botao.disabled = true;
         botao.innerHTML = `<span class="material-symbols-outlined spinner-border spinner-border-sm me-2"></span> Gerando PDFs... Aguarde!`;
 
         google.script.run.withSuccessHandler((resposta) => {
           if (resposta.sucesso) {
-            // Cria um iframe oculto na página que força o navegador a baixar o arquivo na hora
             if (resposta.urlDownload) {
               const iframe = document.createElement('iframe');
               iframe.style.display = 'none';
               iframe.src = resposta.urlDownload;
               document.body.appendChild(iframe);
               
-              // Remove o iframe depois de alguns segundos para manter a página limpa
               setTimeout(() => document.body.removeChild(iframe), 5000);
             }
 
-            // 2. Mostra o aviso de sucesso
             mostrarAlertaCentral("Sucesso!", resposta.mensagem, "success");
             
-            // 3. MÁGICA DA MEMÓRIA: Se teve faltantes, mostra a sessão avulsa e o lembrete!
             const divLembrete = document.getElementById("lembreteFaltantes");
-            const sessaoAvulsas = document.getElementById("sessaoFichasAvulsas"); // Pega a sessão inteira
+            const sessaoAvulsas = document.getElementById("sessaoFichasAvulsas"); 
             
             if (resposta.faltantes && resposta.faltantes.length > 0) {
               if(divLembrete) {
                 divLembrete.classList.remove("escondido");
                 document.getElementById("textoLembreteFaltantes").innerText = resposta.faltantes.join(", ");
               }
-              // Faz a sessão Avulsa aparecer magicamente!
               if(sessaoAvulsas) sessaoAvulsas.classList.remove("escondido");
               
-              // Deixa apenas os faltantes na caixa de texto para facilitar
               document.getElementById(idCampoInput).value = resposta.faltantes.join("\n");
             } else {
               document.getElementById(idCampoInput).value = ""; 
               if(divLembrete) divLembrete.classList.add("escondido");
-              if(sessaoAvulsas) sessaoAvulsas.classList.add("escondido"); // Esconde se deu tudo certo
+              if(sessaoAvulsas) sessaoAvulsas.classList.add("escondido"); 
             }
             
           } else {
@@ -1661,7 +1640,6 @@
               document.getElementById(idCampoInput).value = resposta.faltantes.join("\n");
             }
           }
-          // Restaura o botão
           botao.disabled = false;
           botao.innerHTML = textoOriginal;
 
@@ -1680,12 +1658,11 @@
         } else {
           divUnidades.classList.add("escondido");
           divUnidades.style.display = "none";
-          // Desmarca todas as caixinhas se o usuário clicar em "Não" (Efeito cascata limpo)
           document.querySelectorAll('input[name="unidadeEstudo"]').forEach(cb => cb.checked = false);
         }
       }
 
-      let arrayAvulsos = []; // Guarda a listinha do plantão
+      let arrayAvulsos = []; 
 
       function adicionarFichaAvulsa() {
         const pront = document.getElementById("inputProntAvulso").value.trim();
@@ -1696,10 +1673,8 @@
           return;
         }
 
-        // Adiciona na lista
         arrayAvulsos.push({ prontuario: pront, ppl: nome });
         
-        // Limpa as caixinhas para o próximo
         document.getElementById("inputProntAvulso").value = "";
         document.getElementById("inputNomeAvulso").value = "";
         
@@ -1729,7 +1704,6 @@
           `;
         });
 
-        // Mostra o botão gerar apenas se tiver alguém na lista
         if (arrayAvulsos.length > 0) {
           btnGerar.classList.remove("escondido");
         } else {
@@ -1745,7 +1719,6 @@
         google.script.run.withSuccessHandler((resposta) => {
           if (resposta.sucesso) {
             
-            // Download invisível
             if (resposta.urlDownload) {
               const iframe = document.createElement('iframe');
               iframe.style.display = 'none';
@@ -1761,18 +1734,12 @@
               confirmButtonColor: '#004ba0'
             });
 
-            // Limpa tudo após o sucesso
             arrayAvulsos = [];
             atualizarTelaAvulsos();
             
-            // -------------------------------------------------------------
-            // AS LINHAS NOVAS ESTÃO AQUI: 
-            // Escondem o lembrete, a sessão inteira e limpam a caixa de prontuários!
-            // -------------------------------------------------------------
             const divLembrete = document.getElementById("lembreteFaltantes");
             if (divLembrete) divLembrete.classList.add("escondido");
             
-            // Esconde a sessão inteira de Fichas Avulsas de novo
             const sessaoAvulsas = document.getElementById("sessaoFichasAvulsas");
             if (sessaoAvulsas) sessaoAvulsas.classList.add("escondido");
             
@@ -1784,7 +1751,7 @@
           btnGerar.disabled = false;
           btnGerar.innerHTML = '<span class="material-symbols-outlined align-middle">print</span> Gerar Lote Avulso';
 
-        }).gerarDocsAvulsosBackEnd(arrayAvulsos); // Chama a nova função no Back-end
+        }).gerarDocsAvulsosBackEnd(arrayAvulsos); 
       }
 
       // --- INÍCIO: SISTEMA DE FOTOS E WEBCAM ---
@@ -1824,7 +1791,6 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label small fw-bold text-muted mb-1">Posição (Pesquise):</label>
-                <!-- Usando Datalist: Permite pesquisar e selecionar ao mesmo tempo! -->
                 <input class="form-control tattoo-posicao" list="datalist_${contadorTattoo}" placeholder="Escolha a Visão antes">
                 <datalist id="datalist_${contadorTattoo}"></datalist>
               </div>
@@ -1864,7 +1830,6 @@
           });
       }
 
-      // Função que varre a tela recolhendo todas as fotos para enviar ao Drive
       function empacotarEEnviarFotos() {
           const prontuario = document.getElementById("inputProntuario").value;
           const ppl = document.getElementById("campoPPL").value;
@@ -1873,7 +1838,6 @@
           
           let imagens = [];
           
-          // 1. Pega as fotos principais do rosto
           ['Frente', 'Perfil_Direito', 'Perfil_Esquerdo'].forEach((pos, i) => {
               let input = document.getElementById(`base64_Rosto_${pos}`);
               if(input && input.value) {
@@ -1881,11 +1845,9 @@
               }
           });
           
-          // 2. Pega as tatuagens e gera os nomes complexos automaticamente
           document.querySelectorAll('.bloco-tatuagem').forEach((bloco, idx) => {
               let inputBase64 = bloco.querySelector('.foto-base64-tattoo').value;
               if(inputBase64) {
-                  // Formata o texto para tirar acentos e espaços (Ex: FLOR -> FLOR, Braço -> BRACO)
                   const limparTexto = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").toUpperCase();
                   
                   let subtipo = limparTexto(bloco.querySelector('.tattoo-subtipo').value || "OUTRA");
