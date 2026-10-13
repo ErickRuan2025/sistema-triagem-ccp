@@ -311,6 +311,37 @@
         border-style: solid;
         border-color: transparent #212529 transparent transparent;
       }
+
+      /* === AUTOCOMPLETE TATUAGENS === */
+      .autocomplete-items {
+        position: absolute;
+        border: 1px solid #004ba0;
+        border-top: none;
+        z-index: 1050;
+        top: 100%;
+        left: 0; 
+        right: 0;
+        background-color: #fff;
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 0 0 6px 6px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      }
+      .autocomplete-items div {
+        padding: 10px 12px;
+        cursor: pointer;
+        background-color: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 13px;
+        color: #374151;
+      }
+      .autocomplete-items div:last-child { border-bottom: none; }
+      .autocomplete-items div:hover { background-color: #f3f4f6; }
+      .autocomplete-active {
+        background-color: #004ba0 !important; 
+        color: #ffffff !important; 
+      }
+      .autocomplete-active strong { color: #fff !important; }
     </style>
   </head>
   <body>
@@ -476,7 +507,7 @@
               <div class="col-md-6"><label class="form-label">Profissão / Atividade principal:</label><input type="text" id="dioqProfissao" class="form-control"></div>
               <div class="col-md-3"><label class="form-label">Possui vínculo empregatício?</label><select id="dioqVinculo" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
               <div class="col-md-3"><label class="form-label">Tempo de experiência:</label><input type="text" id="dioqTempoExp" class="form-control"></div>
-              <div class="col-md-5"><label class="form-label">Trabalhava no momento da prisão?</label><select id="dioqTrabPrisao" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+              <div class="col-md-5"><label class="form-label">Trabalhava registrado no momento da prisão?</label><select id="dioqTrabPrisao" class="form-select"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
               <div class="col-md-7"><label class="form-label">Atividade exercida na ocasião:</label><input type="text" id="dioqAtivOcasiao" class="form-control"></div>
               <div class="col-md-6"><label class="form-label">Empresas anteriores:</label><input type="text" id="dioqEmpAnt" class="form-control"></div>
               <div class="col-md-6"><label class="form-label">Outras habilidades/atividades laborterápicas:</label><input type="text" id="dioqOutrasHab" class="form-control"></div>
@@ -952,7 +983,9 @@
       let alvoAtual = { idInput: '', idBox: '' };
       let contadorTattoo = 0;
 
-      const posicoesFrontal = ["01 - Frontal", "02 - Orbitária", "03 - Auricular", "04 - Masseteriana", "05 - Malar", "06 - Nasal", "07 - Bucinadora", "08 - Labial", "09 - Metoniana", "10 - Carotidiana", "11 - Supra Hioidea", "12 - Supraclavicular", "13 - Infra Hioidea", "14 - Clavicular", "15 - Infraclavicular", "16 - Torácica", "17 - Mamária", "18 - Mamilar", "19 - Esternal", "20 - Hipocôndrio", "21 - Epigástrica", "22 - Flanco", "23 - Mesogástrica", "24 - Umbilical", "25 - Fossa Ilíaca", "26 - Hipogástrica", "27 - Pubiana", "28 - Crural", "29 - (H) Peniana", "30 - Ilíaca", "31 - (H) Escrotal", "32 - Terço Superior do Braço", "33 - Terço Médio do Braço", "34 - Terço Inferior do Braço", "35 - Lateral do Cotovelo", "36 - Terço Superior do Antebraço", "37 - Terço Médio do Antebraço", "38 - Terço Inferior do Antebraço", "39 - Punho", "40 - Palmar da Mão", "41 - Terço Superior da Coxa", "42 - Terço Médio da Coxa", "43 - Terço Inferior da Coxa", "44 - Rotuliano", "45 - Face Anterior do Joelho", "46 - Terço Superior da Perna", "47 - Lateral Externa da Perna", "48 - Terço Médio da Perna", "49 - Terço Inferior da Perna", "50 - Lateral Interna da Perna", "51 - Dorsal do Pé", "52 - Inguinal", "53 - (M) Vulvo Vaginal", "54 - Polegar", "55 - Indicador", "56 - Médio", "57 - Anelar", "58 - Mínimo", "59 - Hálux", "60 - Segundo Pododáctilo", "61 - Terceiro Pododáctilo", "62 - Quarto Pododáctilo", "63 - Quinto Pododáctilo", "64 - Hélix", "65 - Antélix", "66 - Concha Auricular", "67 - Lóbulo", "68 - Língua"];
+      const posicoesFrontal = [
+        "01 - Orbitária", "02 - Auricular", "03 - Masseteriana", "04 - Malar", "05 - Nasal", "06 - Bucinadora", "07 - Labial", "08 - Metoniana", "09 - Carotidiana", "10 - Supra Hioidea", "11 - Supraclavicular", "12 - Infra Hioidea", "13 - Clavicular", "14 - Infraclavicular", "15 - Torácica", "16 - Mamária", "17 - Mamilar", "18 - Esternal", "19 - Hipocôndrio", "20 - Epigástrica", "21 - Flanco", "22 - Mesogástrica", "23 - Umbilical", "24 - Fossa Ilíaca", "25 - Hipogástrica", "26 - Pubiana", "27 - Crural", "28 - (H) Peniana", "29 - Ilíaca", "30 - (H) Escrotal", "31 - Terço Superior do Braço", "32 - Terço Médio do Braço", "33 - Terço Inferior do Braço", "34 - Lateral do Cotovelo", "35 - Terço Superior do Antebraço", "36 - Terço Médio do Antebraço", "37 - Terço Inferior do Antebraço", "38 - Punho", "39 - Palmar da Mão", "40 - Terço Superior da Coxa", "41 - Terço Médio da Coxa", "42 - Terço Inferior da Coxa", "43 - Rotuliano", "44 - Face Anterior do Joelho", "45 - Terço Superior da Perna", "46 - Lateral Externa da Perna", "47 - Terço Médio da Perna", "48 - Terço Inferior da Perna", "49 - Lateral Interna da Perna", "50 - Dorsal do Pé", "51 - Inguinal", "52 - (M) Vulvo Vaginal", "53 - Polegar", "54 - Indicador", "55 - Médio", "56 - Anelar", "57 - Mínimo", "58 - Hálux", "59 - Segundo Pododáctilo", "60 - Terceiro Pododáctilo", "61 - Quarto Pododáctilo", "62 - Quinto Pododáctilo", "63 - Hélix", "64 - Antélix", "65 - Concha Auricular", "66 - Lóbulo", "67 - Língua"
+      ];
       const posicoesCostas = ["1 - Parietal", "2 - Occipital", "3 - Temporal", "4 - Cervical", "5 - Supra Escapular", "6 - Escapular", "7 - Terço Superior das Costas", "8 - Lombar", "9 - Ilíaca", "10 - Espondiléia", "11 - Sacro Coccígeia", "12 - Glútea", "13 - Terço Superior da Coxa", "14 - Terço Médio da Coxa", "15 - Terço Inferior da Coxa", "16 - Poplitéia", "17 - Terço Superior da Perna", "18 - Terço Médio da Perna", "19 - Terço Inferior da Perna", "20 - Maleolar Externo", "21 - Calcaniana", "22 - Borda Externa do Pé", "23 - Deltóidiana", "24 - Terço Superior do Braço", "25 - Terço Médio do Braço", "26 - Terço Inferior do Braço", "27 - Cotovelo", "28 - Terço Superior do Antebraço", "29 - Terço Médio do Antebraço", "30 - Terço Inferior do Antebraço", "31 - Punho", "32 - Face Dorsal da Mão", "33 - Polegar", "34 - Indicador", "35 - Médio", "36 - Anelar", "37 - Mínimo"];
 
       function abrirCamera(nomeArquivo, idBox) {
@@ -1025,8 +1058,9 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label small fw-bold text-muted mb-1">Posição (Pesquise):</label>
-                <input class="form-control tattoo-posicao" list="datalist_${contadorTattoo}" placeholder="Escolha a Visão antes">
-                <datalist id="datalist_${contadorTattoo}"></datalist>
+                <div class="position-relative">
+                  <input type="text" id="posicao_${contadorTattoo}" class="form-control tattoo-posicao" placeholder="Escolha a Visão antes" autocomplete="off">
+                </div>
               </div>
               <div class="col-md-2 text-center">
                 <button class="btn btn-outline-primary w-100" type="button" onclick="abrirCamera('Tattoo_${contadorTattoo}', 'boxFotoTattoo_${contadorTattoo}')">
@@ -1045,22 +1079,118 @@
             </div>
           `;
           document.getElementById('containerTatuagens').appendChild(div);
+          
+          // Liga o "Motor de Busca" à caixa de Posição
+          ativarAutocomplete(document.getElementById(`posicao_${contadorTattoo}`), div);
       }
 
       function atualizarPosicoes(selectVisao, id) {
-          const datalist = document.getElementById(`datalist_${id}`);
-          const inputPosicao = document.querySelector(`input[list="datalist_${id}"]`);
-          
+          const inputPosicao = document.getElementById(`posicao_${id}`);
           inputPosicao.value = ""; 
-          inputPosicao.placeholder = "Digite para pesquisar...";
-          datalist.innerHTML = ''; 
+          if(selectVisao.value) {
+              inputPosicao.placeholder = "Digite para pesquisar...";
+          } else {
+              inputPosicao.placeholder = "Escolha a Visão antes";
+          }
+      }
+
+      function ativarAutocomplete(inp, divBloco) {
+          let currentFocus;
           
-          let arrayUsar = selectVisao.value === "FRONTAL" ? posicoesFrontal : (selectVisao.value === "COSTAS" ? posicoesCostas : []);
+          // Quando o utilizador escreve algo (Filtro e exibição de resultados)
+          inp.addEventListener("input", function(e) {
+              let a, b, i, val = this.value;
+              fecharTodasListas();
+              
+              // Se o campo estiver vazio, não mostra absolutamente nada
+              if (!val || val.trim() === "") return false;
+              
+              const visaoSelect = divBloco.querySelector('.tattoo-visao').value;
+              if (!visaoSelect) return false;
+              let arr = visaoSelect === "FRONTAL" ? posicoesFrontal : posicoesCostas;
+              
+              currentFocus = -1;
+              a = document.createElement("DIV");
+              a.setAttribute("id", this.id + "autocomplete-list");
+              a.setAttribute("class", "autocomplete-items");
+              this.parentNode.appendChild(a);
+
+              let qtde = 0;
+              for (i = 0; i < arr.length; i++) {
+                  // Filtra o termo em qualquer parte do texto ignorando maiúsculas/minúsculas
+                  if (arr[i].toLowerCase().includes(val.toLowerCase())) {
+                      b = document.createElement("DIV");
+                      
+                      // Destaca o termo digitado na lista
+                      let idx = arr[i].toLowerCase().indexOf(val.toLowerCase());
+                      b.innerHTML = arr[i].substring(0, idx);
+                      b.innerHTML += "<strong style='color: #004ba0;'>" + arr[i].substring(idx, idx + val.length) + "</strong>";
+                      b.innerHTML += arr[i].substring(idx + val.length);
+                      b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                      
+                      b.addEventListener("click", function(e) {
+                          inp.value = this.getElementsByTagName("input")[0].value;
+                          fecharTodasListas();
+                      });
+                      a.appendChild(b);
+                      qtde++;
+                  }
+              }
+              
+              // Caso o texto digitado não corresponda a nenhuma posição existente
+              if(qtde === 0) {
+                 let semResultados = document.createElement("DIV");
+                 semResultados.innerHTML = "<div style='padding: 2px 10px; color: #6c757d; font-style: italic;'>Nenhuma posição encontrada</div>";
+                 a.appendChild(semResultados);
+              }
+          });
+
+          // Navegação pelas setas do teclado e seleção via Enter
+          inp.addEventListener("keydown", function(e) {
+              let x = document.getElementById(this.id + "autocomplete-list");
+              if (x) x = x.getElementsByTagName("div");
+              if (e.keyCode == 40) { // SETA PARA BAIXO
+                  currentFocus++;
+                  addActive(x);
+              } else if (e.keyCode == 38) { // SETA PARA CIMA
+                  currentFocus--;
+                  addActive(x);
+              } else if (e.keyCode == 13) { // ENTER
+                  e.preventDefault();
+                  if (currentFocus > -1) {
+                      if (x) x[currentFocus].click();
+                  }
+              }
+          });
+
+          function addActive(x) {
+              if (!x) return false;
+              removeActive(x);
+              if (currentFocus >= x.length) currentFocus = 0;
+              if (currentFocus < 0) currentFocus = (x.length - 1);
+              if (x[currentFocus].innerText.includes("Nenhuma posição")) return; 
+              x[currentFocus].classList.add("autocomplete-active");
+              x[currentFocus].scrollIntoView({block: "nearest"}); 
+          }
+
+          function removeActive(x) {
+              for (let i = 0; i < x.length; i++) {
+                  x[i].classList.remove("autocomplete-active");
+              }
+          }
+
+          function fecharTodasListas(elmnt) {
+              let x = document.getElementsByClassName("autocomplete-items");
+              for (let i = 0; i < x.length; i++) {
+                  if (elmnt != x[i] && elmnt != inp) {
+                      x[i].parentNode.removeChild(x[i]);
+                  }
+              }
+          }
           
-          arrayUsar.forEach(pos => {
-              const opt = document.createElement('option');
-              opt.value = pos;
-              datalist.appendChild(opt);
+          // Fecha a lista ao clicar em qualquer outra parte da tela
+          document.addEventListener("click", function (e) {
+              fecharTodasListas(e.target);
           });
       }
 
