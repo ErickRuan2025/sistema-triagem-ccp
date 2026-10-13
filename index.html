@@ -829,10 +829,8 @@
               <button type="button" class="btn-nav-secondary" onclick="event.preventDefault(); mudarAba('pedagogia-tab')">
                 <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span> Voltar para Pedagogia
               </button>
-
-              <button type="button" class="btn-salvar-smart shadow-sm" id="btnSalvarFinal" onclick="salvarEGerarPDF()">
-                <span class="material-symbols-outlined" id="iconeSalvar" style="font-size: 18px;">save</span>
-                <span class="texto-normal" id="textoSalvar">Salvar Triagem</span>
+              <button type="button" class="btn-nav-primary" onclick="event.preventDefault(); mudarAba('fotos-tab')">
+                Próximo: Fotos <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -879,6 +877,18 @@
             <button class="btn btn-outline-success mt-3 shadow-sm" type="button" onclick="adicionarTatuagem()">
               <span class="material-symbols-outlined align-middle fs-5">add_circle</span> Adicionar Nova Tatuagem
             </button>
+
+            <!-- NOVO RODAPÉ DA ABA FOTOS COM O BOTÃO SALVAR -->
+            <div class="d-flex justify-content-between mt-5 border-top pt-4">
+              <button type="button" class="btn-nav-secondary" onclick="event.preventDefault(); mudarAba('social-tab')">
+                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span> Voltar para Social
+              </button>
+
+              <button type="button" class="btn-salvar-smart shadow-sm" id="btnSalvarFinal" onclick="salvarEGerarPDF()">
+                <span class="material-symbols-outlined" id="iconeSalvar" style="font-size: 18px;">save</span>
+                <span class="texto-normal" id="textoSalvar">Salvar Triagem e Enviar Fotos</span>
+              </button>
+            </div>
           </div>
 
           <!-- MODAL DA CÂMERA (Versão Ao Vivo para PC) -->
